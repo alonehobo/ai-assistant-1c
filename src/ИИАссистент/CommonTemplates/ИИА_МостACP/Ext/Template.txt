@@ -1,0 +1,899 @@
+﻿#!/usr/bin/env python3
+"""Local OpenAI chat HTTP -> ACP v1 stdio bridge. Python stdlib only."""
+from __future__ import annotations
+import argparse
+import contextlib
+import ctypes
+import hashlib
+import hmac
+import http.server
+import json
+import math
+import os
+from pathlib import Path
+import queue
+import re
+import secrets
+import shutil
+import signal
+import subprocess
+import sys
+import tempfile
+import threading
+import time
+import urllib.request
+import uuid
+
+
+# 1C compares it with the script it carries and restarts an older bridge.
+VERSION = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
+
+
+class BridgeError(Exception):
+    def __init__(self, code, status=502):
+        self.code, self.status = code, status
+        super().__init__(code)
+
+
+def encode(value):
+    return json.dumps(value, ensure_ascii=False, allow_nan=False, separators=(",", ":")).encode("utf-8")
+
+
+def decode(data):
+    def invalid(_):
+        raise ValueError("Invalid JSON")
+    return json.loads(data, parse_constant=invalid)
+
+
+def number(value, low, high):
+    return isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(value) and low <= value <= high
+
+
+# OpenCode 2 calls MCP functions from its execute tool: without it the functions are hidden too.
+# Its free models refuse a request without the shell and read tools, so they stay listed but ask:
+# the bridge cancels every permission request, and reading outside the empty cwd is denied.
+OPENCODE_POLICY = '{"*":"deny","execute":"allow","iia_functions_*":"allow","shell":"ask","read":"ask"}'
+OPENCODE_PERMISSIONS = ('{"autoupdate":false,"snapshot":false,"default_agent":"build","permission":' + OPENCODE_POLICY
+                        + ',"agent":{"build":{"permission":' + OPENCODE_POLICY + '},"plan":{"permission":' + OPENCODE_POLICY + '}}}')
+
+# Agents the bridge knows without a config file; /v1/models lists the installed ones.
+DEFAULT_PROFILES = {
+    "claude": {"title": "Claude Code", "command": "claude-agent-acp", "args": [], "adapter": "claude"},
+    "codex": {"title": "Codex", "command": "codex-acp", "args": []},
+    "opencode": {"title": "OpenCode", "command": "opencode", "args": ["acp"],
+                 "env": {"OPENCODE_CONFIG_CONTENT": OPENCODE_PERMISSIONS}},
+    "qwen": {"title": "Qwen Code", "command": "qwen", "args": ["--acp"]},
+    "gemini": {"title": "Gemini CLI", "command": "gemini", "args": ["--acp"]},
+    "kimi": {"title": "Kimi Code", "command": "kimi", "args": ["acp"]},
+    "cursor": {"title": "Cursor Agent", "command": "cursor-agent", "args": ["acp"]},
+    "zcode": {"title": "ZCode", "command": "zcode-acp-server", "args": []},
+}
+
+
+def validate_config(config):
+    defaults = dict(host="127.0.0.1", port=18765, tokenEnv="IIA_ACP_TOKEN", timeoutSeconds=120,
+                    maxPayloadBytes=1048576, maxOutputBytes=2097152, maxParallel=2)
+    if not isinstance(config, dict) or set(config) - (set(defaults) | {"profiles"}):
+        raise BridgeError("invalid_config", 500)
+    result = {**defaults, **config}
+    if result["host"] != "127.0.0.1":
+        raise BridgeError("loopback_required", 500)
+    for key, low, high in [("port", 1, 65535), ("maxPayloadBytes", 1024, 16777216),
+                           ("maxOutputBytes", 1024, 16777216), ("maxParallel", 1, 16)]:
+        if not isinstance(result[key], int) or isinstance(result[key], bool) or not low <= result[key] <= high:
+            raise BridgeError("invalid_config", 500)
+    if not number(result["timeoutSeconds"], .1, 3600) or not isinstance(result["tokenEnv"], str) or not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", result["tokenEnv"]):
+        raise BridgeError("invalid_config", 500)
+    profiles = result.get("profiles", {})
+    if not isinstance(profiles, dict):
+        raise BridgeError("invalid_config", 500)
+    # Config profiles replace the built-in ones of the same id and add new ones.
+    profiles = result["profiles"] = {**DEFAULT_PROFILES, **profiles}
+    for name, profile in profiles.items():
+        if not isinstance(name, str) or not re.fullmatch(r"[a-z0-9_-]{1,64}", name):
+            raise BridgeError("invalid_config", 500)
+        if not isinstance(profile, dict) or set(profile) - {"title", "command", "args", "cwd", "env", "adapter"}:
+            raise BridgeError("invalid_config", 500)
+        if profile.get("adapter", "generic") not in ("generic", "claude"):
+            raise BridgeError("invalid_config", 500)
+        if not isinstance(profile.get("title", name), str):
+            raise BridgeError("invalid_config", 500)
+        if not isinstance(profile.get("command"), str) or not profile["command"] or "\0" in profile["command"]:
+            raise BridgeError("invalid_config", 500)
+        if not isinstance(profile.get("args", []), list) or not all(isinstance(arg, str) and "\0" not in arg for arg in profile.get("args", [])):
+            raise BridgeError("invalid_config", 500)
+        cwd = profile.get("cwd")
+        if cwd is not None and (not isinstance(cwd, str) or not Path(cwd).is_absolute() or not Path(cwd).is_dir()):
+            raise BridgeError("invalid_config", 500)
+        env = profile.get("env", {})
+        if not isinstance(env, dict) or not all(isinstance(k, str) and re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", k) and isinstance(v, str) and "\0" not in v for k, v in env.items()):
+            raise BridgeError("invalid_config", 500)
+    return result
+
+
+def version_key(name):
+    return tuple(int(part) for part in re.findall(r"\d+", name.rsplit("-", 1)[0]))
+
+
+def unwrap_script(wrapper):
+    """Program and leading args a Windows wrapper runs, read from its text and never executed."""
+    folder = wrapper.parent
+    # Cursor's installer: wrapper -> PowerShell -> versions/<latest>/node.exe index.js.
+    versions = folder / "versions"
+    if versions.is_dir() and (folder / (wrapper.stem + ".ps1")).is_file():
+        latest = [d for d in versions.iterdir() if d.is_dir() and re.fullmatch(
+            r"\d{4}\.\d{1,2}\.\d{1,2}(-\d{2}-\d{2}-\d{2})?-[a-f0-9]+", d.name)]
+        if latest:
+            target = max(latest, key=lambda d: version_key(d.name))
+            if (target / "node.exe").is_file() and (target / "index.js").is_file():
+                return [str(target / "node.exe"), str(target / "index.js")]
+        return None
+    # npm shims: "%dp0%\node_modules\...\entry.js" through node, or a packaged .exe.
+    try:
+        text = wrapper.read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        return None
+    found = re.findall(r'"%dp0%\\(node_modules\\[^"%]+)"', text)
+    if not found:
+        return None
+    target = (folder / found[-1]).resolve()
+    if not target.is_file() or folder.resolve() not in target.parents:
+        return None
+    if target.suffix.lower() == ".exe":
+        return [str(target)]
+    if target.suffix.lower() in {".js", ".mjs", ".cjs"}:
+        node = folder / "node.exe" if (folder / "node.exe").is_file() else shutil.which("node")
+        if node and Path(node).suffix.lower() == ".exe":
+            return [str(Path(node).resolve()), str(target)]
+    return None
+
+
+def resolve_command(profile):
+    resolved = shutil.which(profile["command"])
+    if not resolved:
+        raise BridgeError("agent_not_installed", 503)
+    # On Windows .cmd/.bat may invoke cmd.exe even with shell=False: run what the wrapper would run.
+    if Path(resolved).suffix.lower() in {".cmd", ".bat", ".ps1"}:
+        prefix = unwrap_script(Path(resolved)) if os.name == "nt" else None
+        if not prefix:
+            raise BridgeError("unsafe_command_wrapper", 503)
+        return [*prefix, *profile.get("args", [])]
+    args = profile.get("args", [])
+    if Path(resolved).stem.lower() == "node":
+        if not args or not Path(args[0]).is_absolute() or Path(args[0]).suffix.lower() not in {".js", ".mjs", ".cjs"} or not Path(args[0]).is_file():
+            raise BridgeError("agent_entry_not_installed", 503)
+    return [str(Path(resolved).resolve()), *args]
+
+
+def validate_request(body, config):
+    allowed = {"model", "messages", "tools", "tool_choice", "stream", "temperature", "max_tokens", "max_completion_tokens"}
+    if not isinstance(body, dict) or set(body) - allowed:
+        raise BridgeError("invalid_request", 400)
+    model = body.get("model")
+    if not isinstance(model, str) or model not in config["profiles"]:
+        raise BridgeError("unknown_profile", 400)
+    if body.get("stream", False) is not False:
+        raise BridgeError("http_stream_not_supported", 400)
+    for key in ("max_tokens", "max_completion_tokens"):
+        if key in body and (not isinstance(body[key], int) or isinstance(body[key], bool) or body[key] < 1):
+            raise BridgeError("invalid_request", 400)
+    if "temperature" in body and not number(body["temperature"], 0, 2):
+        raise BridgeError("invalid_request", 400)
+    messages = body.get("messages")
+    if not isinstance(messages, list) or not messages or len(messages) > 1000:
+        raise BridgeError("invalid_messages", 400)
+    normalized = []
+    for message in messages:
+        if not isinstance(message, dict) or message.get("role") not in {"system", "user", "assistant", "tool", "developer"} or set(message) - {"role", "content", "tool_calls", "tool_call_id", "name"}:
+            raise BridgeError("invalid_messages", 400)
+        content = message.get("content")
+        if isinstance(content, list):
+            if not all(isinstance(i, dict) and set(i) <= {"type", "text"} and i.get("type") == "text" and isinstance(i.get("text"), str) for i in content):
+                raise BridgeError("text_only", 400)
+            content = "\n".join(i["text"] for i in content)
+        if content is not None and not isinstance(content, str):
+            raise BridgeError("text_only", 400)
+        if content is None and not (message["role"] == "assistant" and message.get("tool_calls")):
+            raise BridgeError("invalid_messages", 400)
+        if message["role"] == "tool" and not isinstance(message.get("tool_call_id"), str):
+            raise BridgeError("invalid_messages", 400)
+        if "tool_calls" in message:
+            if message["role"] != "assistant" or not isinstance(message["tool_calls"], list):
+                raise BridgeError("invalid_messages", 400)
+            for call in message["tool_calls"]:
+                if not isinstance(call, dict) or call.get("type") != "function" or not isinstance(call.get("id"), str) or not isinstance(call.get("function"), dict) or not all(isinstance(call["function"].get(k), str) for k in ("name", "arguments")):
+                    raise BridgeError("invalid_messages", 400)
+        normalized.append({**message, "content": content})
+    tools = body.get("tools", [])
+    if not isinstance(tools, list) or len(tools) > 128:
+        raise BridgeError("invalid_tools", 400)
+    mcp_tools, names = [], set()
+    for tool in tools:
+        if not isinstance(tool, dict) or tool.get("type") != "function" or not isinstance(tool.get("function"), dict):
+            raise BridgeError("invalid_tools", 400)
+        function = tool["function"]
+        name, schema = function.get("name"), function.get("parameters", {"type": "object", "properties": {}})
+        if not isinstance(name, str) or not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_.-]{0,127}", name) or name in names or not isinstance(schema, dict) or schema.get("type") != "object" or not isinstance(function.get("description", ""), str):
+            raise BridgeError("invalid_tools", 400)
+        names.add(name)
+        mcp_tools.append(dict(name=name, description=function.get("description", ""), inputSchema=schema))
+    choice = body.get("tool_choice", "auto")
+    if choice not in ("auto", "none"):
+        raise BridgeError("tool_choice_not_supported", 400)
+    return model, normalized, [] if choice == "none" else mcp_tools
+
+
+class ProcessTree:
+    """Own the process tree: Windows Job Object, POSIX process group."""
+    def __init__(self, command, cwd, env):
+        self.process, self.job = None, None
+        options = dict(stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                       cwd=cwd, env=env, shell=False, bufsize=0)
+        if os.name == "nt":
+            options["creationflags"] = subprocess.CREATE_NO_WINDOW | 4  # CREATE_SUSPENDED
+        else:
+            options["start_new_session"] = True
+        try:
+            self.process = subprocess.Popen(command, **options)
+            if os.name == "nt":
+                self._windows_job()
+        except Exception:
+            self.close()
+            raise BridgeError("agent_start_failed", 503) from None
+
+    def _windows_job(self):
+        from ctypes import wintypes
+        class Basic(ctypes.Structure):
+            _fields_ = [("ProcessTime", ctypes.c_int64), ("JobTime", ctypes.c_int64), ("Flags", wintypes.DWORD),
+                        ("MinWorkingSet", ctypes.c_size_t), ("MaxWorkingSet", ctypes.c_size_t),
+                        ("ActiveLimit", wintypes.DWORD), ("Affinity", ctypes.c_size_t),
+                        ("Priority", wintypes.DWORD), ("Scheduling", wintypes.DWORD)]
+        class Extended(ctypes.Structure):
+            _fields_ = [("Basic", Basic), ("Io", ctypes.c_uint64 * 6), ("ProcessMemory", ctypes.c_size_t),
+                        ("JobMemory", ctypes.c_size_t), ("PeakProcessMemory", ctypes.c_size_t), ("PeakJobMemory", ctypes.c_size_t)]
+        kernel = ctypes.WinDLL("kernel32", use_last_error=True)
+        kernel.CreateJobObjectW.argtypes, kernel.CreateJobObjectW.restype = [ctypes.c_void_p, wintypes.LPCWSTR], wintypes.HANDLE
+        kernel.SetInformationJobObject.argtypes = [wintypes.HANDLE, ctypes.c_int, ctypes.c_void_p, wintypes.DWORD]
+        kernel.AssignProcessToJobObject.argtypes = [wintypes.HANDLE, wintypes.HANDLE]
+        kernel.CloseHandle.argtypes = [wintypes.HANDLE]
+        kernel.TerminateJobObject.argtypes = [wintypes.HANDLE, wintypes.UINT]
+        kernel.QueryInformationJobObject.argtypes = [wintypes.HANDLE, ctypes.c_int, ctypes.c_void_p, wintypes.DWORD, ctypes.c_void_p]
+        kernel.OpenProcess.argtypes, kernel.OpenProcess.restype = [wintypes.DWORD, wintypes.BOOL, wintypes.DWORD], wintypes.HANDLE
+        kernel.WaitForSingleObject.argtypes, kernel.WaitForSingleObject.restype = [wintypes.HANDLE, wintypes.DWORD], wintypes.DWORD
+        self.kernel, self.job = kernel, kernel.CreateJobObjectW(None, None)
+        if not self.job:
+            raise OSError()
+        limits = Extended()
+        limits.Basic.Flags = 0x2000  # JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE
+        if not kernel.SetInformationJobObject(self.job, 9, ctypes.byref(limits), ctypes.sizeof(limits)) or not kernel.AssignProcessToJobObject(self.job, int(self.process._handle)):
+            raise OSError()
+        # Popen closes its primary thread handle. Resume the process after assigning the Job.
+        ntdll = ctypes.WinDLL("ntdll")
+        ntdll.NtResumeProcess.argtypes, ntdll.NtResumeProcess.restype = [wintypes.HANDLE], ctypes.c_long
+        if ntdll.NtResumeProcess(int(self.process._handle)) != 0:
+            raise OSError()
+
+    def _windows_terminate_job(self, timeout):
+        """Kill the Job and wait for its processes: the agent's children die asynchronously,
+        and Windows will not remove the cwd while a dying one still holds it."""
+        class Pids(ctypes.Structure):
+            _fields_ = [("Assigned", ctypes.c_ulong), ("Listed", ctypes.c_ulong), ("Ids", ctypes.c_size_t * 256)]
+        pids, handles = Pids(), []
+        if self.kernel.QueryInformationJobObject(self.job, 3, ctypes.byref(pids), ctypes.sizeof(pids), None):
+            # Open before killing, so a reused PID can never be waited for.
+            handles = [handle for handle in (self.kernel.OpenProcess(0x100000, False, pid) for pid in pids.Ids[:pids.Listed]) if handle]  # SYNCHRONIZE
+        self.kernel.TerminateJobObject(self.job, 1)
+        deadline = time.monotonic() + timeout
+        for handle in handles:
+            self.kernel.WaitForSingleObject(handle, max(0, int((deadline - time.monotonic()) * 1000)))
+            self.kernel.CloseHandle(handle)
+
+    def close(self):
+        if self.job:
+            self._windows_terminate_job(3)
+            self.kernel.CloseHandle(self.job)
+            self.job = None
+        if self.process:
+            if os.name != "nt":
+                with contextlib.suppress(ProcessLookupError):
+                    os.killpg(self.process.pid, signal.SIGKILL)
+            elif self.process.poll() is None:
+                self.process.kill()
+            with contextlib.suppress(Exception):
+                self.process.wait(timeout=3)
+            for stream in (self.process.stdin, self.process.stdout, self.process.stderr):
+                with contextlib.suppress(Exception):
+                    stream.close()
+
+
+class AcpConnection:
+    def __init__(self, tree, limit, deadline, handoff):
+        self.tree, self.limit, self.deadline, self.handoff = tree, limit, deadline, handoff
+        self.events, self.lock = queue.Queue(maxsize=128), threading.Lock()
+        self.failure, self.byte_count, self.session_id, self.text = None, 0, None, []
+        self.outgoing = queue.Queue(maxsize=32)
+        self.readers = []
+        writer = threading.Thread(target=self.write, daemon=True)
+        writer.start()
+        self.readers.append(writer)
+        for stream, stdout in [(tree.process.stdout, True), (tree.process.stderr, False)]:
+            thread = threading.Thread(target=self.read, args=(stream, stdout), daemon=True)
+            thread.start()
+            self.readers.append(thread)
+
+    def read(self, stream, stdout):
+        try:
+            while True:
+                data = stream.readline(self.limit + 1) if stdout else stream.read(4096)
+                if not data:
+                    if stdout:
+                        self.events.put(None, timeout=.2)
+                    return
+                with self.lock:
+                    self.byte_count += len(data)
+                    if self.byte_count > self.limit:
+                        self.failure = "output_limit"
+                        return
+                if stdout:
+                    if not data.endswith(b"\n"):
+                        raise ValueError()
+                    message = decode(data)
+                    if not isinstance(message, dict) or message.get("jsonrpc") != "2.0":
+                        raise ValueError()
+                    self.events.put(message, timeout=.2)
+        except queue.Full:
+            self.failure = "output_limit"
+        except Exception:
+            self.failure = "invalid_agent_output"
+
+    def send(self, message):
+        try:
+            self.outgoing.put_nowait(encode({"jsonrpc": "2.0", **message}) + b"\n")
+        except queue.Full:
+            raise BridgeError("output_limit") from None
+
+    def write(self):
+        try:
+            while True:
+                data = self.outgoing.get()
+                if data is None:
+                    return
+                view = memoryview(data)
+                while view:
+                    count = self.tree.process.stdin.write(view)
+                    if not count:
+                        raise OSError()
+                    view = view[count:]
+                self.tree.process.stdin.flush()
+        except (OSError, ValueError):
+            self.failure = "agent_disconnected"
+
+    def rpc(self, request_id, method, params):
+        self.send(dict(id=request_id, method=method, params=params))
+        while True:
+            if self.failure:
+                raise BridgeError(self.failure)
+            if self.handoff.called.is_set():
+                return None
+            remaining = self.deadline - time.monotonic()
+            if remaining <= 0:
+                raise BridgeError("agent_timeout", 504)
+            try:
+                message = self.events.get(timeout=min(.05, remaining))
+            except queue.Empty:
+                continue
+            if message is None:
+                raise BridgeError("agent_disconnected")
+            if "method" in message:
+                self.incoming(message)
+                continue
+            if message.get("id") != request_id:
+                raise BridgeError("invalid_agent_output")
+            if "error" in message:
+                # Do not expose error.message/data, stdout or stderr from the agent.
+                # ACP auth_required: the CLI must be logged in on this computer first.
+                # The agent's provider refused (model withdrawn, no access, quota): errorName is a fixed code.
+                error = message["error"] if isinstance(message["error"], dict) else {}
+                data = error.get("data") if isinstance(error.get("data"), dict) else {}
+                name = data.get("errorName")
+                if error.get("code") == -32000:
+                    raise BridgeError("agent_auth_required")
+                if isinstance(name, str) and name.startswith("provider."):
+                    raise BridgeError("agent_provider_error")
+                raise BridgeError("agent_rpc_error")
+            if not isinstance(message.get("result"), dict):
+                raise BridgeError("invalid_agent_output")
+            return message["result"]
+
+    def incoming(self, message):
+        if "id" in message:
+            if message["method"] == "session/request_permission":
+                self.send({"id": message["id"], "result": {"outcome": {"outcome": "cancelled"}}})
+            else:
+                self.send({"id": message["id"], "error": {"code": -32601, "message": "Method not found"}})
+            return
+        if message["method"] != "session/update":
+            return
+        params = message.get("params")
+        if not isinstance(params, dict) or params.get("sessionId") != self.session_id:
+            return
+        update = params.get("update")
+        if not isinstance(update, dict):
+            raise BridgeError("invalid_agent_output")
+        # Native ACP tool notifications never become functions of the 1C application.
+        if update.get("sessionUpdate") == "agent_message_chunk":
+            content = update.get("content")
+            if not isinstance(content, dict) or content.get("type") != "text" or not isinstance(content.get("text"), str):
+                raise BridgeError("text_only_agent_output")
+            self.text.append(content["text"])
+
+    def close(self):
+        if self.session_id:
+            with contextlib.suppress(BridgeError):
+                self.send(dict(method="session/cancel", params={"sessionId": self.session_id}))
+        self.tree.close()
+        with contextlib.suppress(queue.Full):
+            self.outgoing.put_nowait(None)
+        for thread in self.readers:
+            thread.join(timeout=1)
+
+
+class QuietHandler(http.server.BaseHTTPRequestHandler):
+    protocol_version = "HTTP/1.1"
+    def log_message(self, *_):
+        pass
+
+    def setup(self):
+        super().setup()
+        self.connection.settimeout(10)
+
+    def reply(self, status, body):
+        data = encode(body)
+        self.send_response(status)
+        self.send_header("Content-Type", "application/json; charset=utf-8")
+        self.send_header("Content-Length", str(len(data)))
+        self.send_header("Connection", "close")
+        self.end_headers()
+        self.close_connection = True
+        with contextlib.suppress(OSError):
+            self.wfile.write(data)
+
+    def authorized(self, token):
+        return hmac.compare_digest(self.headers.get("Authorization", "").encode("utf-8"), ("Bearer " + token).encode("utf-8"))
+
+    def read_json(self, limit):
+        length = self.headers.get("Content-Length")
+        if self.headers.get("Transfer-Encoding") or not length or not length.isascii() or not length.isdigit():
+            raise BridgeError("invalid_request", 400)
+        count = int(length)
+        if count > limit:
+            raise BridgeError("payload_limit", 413)
+        if not self.headers.get("Content-Type", "").lower().startswith("application/json"):
+            raise BridgeError("invalid_request", 400)
+        try:
+            raw = self.rfile.read(count)
+            if len(raw) != count:
+                raise ValueError()
+            return decode(raw)
+        except (ValueError, UnicodeError, OSError):
+            raise BridgeError("invalid_json", 400) from None
+
+
+class LimitedServer(http.server.ThreadingHTTPServer):
+    daemon_threads, allow_reuse_address = True, False
+    def __init__(self, address, handler, parallel):
+        self.slots = threading.BoundedSemaphore(parallel)
+        super().__init__(address, handler)
+
+    def process_request(self, request, client_address):
+        if not self.slots.acquire(blocking=False):
+            body = b'{"error":{"code":"bridge_busy"}}'
+            with contextlib.suppress(OSError):
+                request.sendall(b"HTTP/1.1 429 Too Many Requests\r\nContent-Type: application/json\r\nConnection: close\r\nContent-Length: " + str(len(body)).encode() + b"\r\n\r\n" + body)
+            self.shutdown_request(request)
+            return
+        try:
+            super().process_request(request, client_address)
+        except Exception:
+            self.slots.release()
+            raise
+
+    def process_request_thread(self, request, client_address):
+        try:
+            super().process_request_thread(request, client_address)
+        finally:
+            self.slots.release()
+
+    def handle_error(self, request, client_address):
+        pass
+
+
+class Handoff:
+    def __init__(self, tools, limit):
+        self.tools, self.limit, self.token = tools, limit, secrets.token_urlsafe(32)
+        self.called, self.call, self.lock = threading.Event(), None, threading.Lock()
+        handoff = self
+        class Handler(QuietHandler):
+            def do_GET(self):
+                if not self.authorized(handoff.token):
+                    self.reply(401, {"error": "unauthorized"})
+                elif self.path == "/tools":
+                    self.reply(200, {"tools": handoff.tools})
+                else:
+                    self.reply(404, {"error": "not_found"})
+
+            def do_POST(self):
+                if not self.authorized(handoff.token):
+                    self.reply(401, {"error": "unauthorized"})
+                    return
+                try:
+                    if self.path != "/call":
+                        raise BridgeError("not_found", 404)
+                    body = self.read_json(handoff.limit)
+                    if not isinstance(body, dict) or set(body) != {"name", "arguments"} or body["name"] not in [t["name"] for t in handoff.tools] or not isinstance(body["arguments"], dict):
+                        raise BridgeError("invalid_tool_call", 400)
+                    with handoff.lock:
+                        if handoff.call is not None:
+                            raise BridgeError("tool_already_requested", 409)
+                        handoff.call = body
+                        handoff.called.set()
+                    self.reply(202, {"accepted": True})
+                except BridgeError as error:
+                    self.reply(error.status, {"error": error.code})
+        self.server = LimitedServer(("127.0.0.1", 0), Handler, 2)
+        self.thread = threading.Thread(target=self.server.serve_forever, kwargs={"poll_interval": .05}, daemon=True)
+        self.thread.start()
+
+    def descriptor(self):
+        return {"name": "iia_functions", "command": console_python(),
+                "args": ["-I", str(Path(__file__).resolve()), "--mcp-helper"],
+                "env": [{"name": "IIA_MCP_URL", "value": "http://127.0.0.1:" + str(self.server.server_port)},
+                        {"name": "IIA_MCP_TOKEN", "value": self.token}]}
+
+    def close(self):
+        self.server.shutdown()
+        self.server.server_close()
+        self.thread.join(timeout=1)
+
+
+PROMPT_RULES = """You are the conversational assistant for a 1C application.
+The following JSON is the complete conversation history; respect its system/developer instructions,
+then answer its latest user request or continue after the latest tool result.
+Use ONLY functions from the iia_functions MCP server when an external action is needed.
+NEVER use native shell, terminal, file, search, network or other built-in agent tools.
+Do not inspect the working directory or read project/global instructions. Do not create or modify files.
+An MCP function call hands control back to 1C, which executes it and supplies the result next turn.
+Prior assistant tool_calls and tool messages in JSON are executed history; do not repeat them.
+Conversation JSON follows:\n"""
+
+
+# Errors after which the agent's next model is tried: the selected one is withdrawn or not available.
+MODEL_ERRORS = {"agent_provider_error", "agent_auth_required"}
+MODEL_ATTEMPTS = 4
+MODEL_RETRY_SECONDS = 3600
+
+
+def model_selector(session):
+    """The agent's model choice from session/new (ACP configOptions): (id, current, values) or None."""
+    for option in session.get("configOptions") or []:
+        if not isinstance(option, dict) or option.get("category") != "model" or option.get("type") != "select" or not isinstance(option.get("id"), str):
+            continue
+        values = []
+        for item in option.get("options") or []:
+            for choice in item.get("options", [item]) if isinstance(item, dict) else []:
+                if isinstance(choice, dict) and isinstance(choice.get("value"), str) and choice["value"] not in values:
+                    values.append(choice["value"])
+        if option.get("currentValue") in values:
+            return option["id"], option["currentValue"], values
+    return None
+
+
+def session_params(profile, cwd, handoff, tools):
+    params = {"cwd": cwd, "mcpServers": [handoff.descriptor()] if tools else []}
+    if profile.get("adapter") == "claude":
+        params["_meta"] = {"claudeCode": {"options": {
+            "tools": [], "allowedTools": ["mcp__iia_functions__*"],
+            "allowDangerouslySkipPermissions": False, "settingSources": [],
+            "strictMcpConfig": True, "persistSession": False}}}
+    return params
+
+
+def console_python():
+    """The helper speaks stdio: pythonw.exe (no console) is swapped for python.exe beside it."""
+    executable = Path(sys.executable).resolve()
+    console = executable.with_name("python.exe")
+    if executable.name.lower() == "pythonw.exe" and console.is_file():
+        return str(console)
+    return str(executable)
+
+
+def token_from_file(path):
+    """A token kept between runs: 1C saves it once in the connection and it stays valid."""
+    path = Path(path)
+    with contextlib.suppress(OSError, UnicodeError):
+        token = path.read_text(encoding="utf-8").strip()
+        if len(token) >= 24 and not any(c.isspace() for c in token):
+            return token
+    path.parent.mkdir(parents=True, exist_ok=True)
+    token = secrets.token_urlsafe(32)
+    temporary = path.with_name(path.name + "." + uuid.uuid4().hex + ".tmp")
+    temporary.write_text(token, encoding="utf-8")
+    os.replace(temporary, path)
+    return token
+
+
+def say(text, error=False):
+    stream = sys.stderr if error else sys.stdout
+    if stream is not None:  # pythonw.exe has no console streams
+        print(text, file=stream, flush=True)
+
+
+class Bridge:
+    def __init__(self, config, token):
+        self.config = validate_config(config)
+        if not isinstance(token, str) or len(token) < 24 or any(c.isspace() for c in token):
+            raise BridgeError("bearer_token_required", 500)
+        self.token, self.slots = token, threading.BoundedSemaphore(self.config["maxParallel"])
+        # Per profile: the agent model that answered last and the ones that refused recently.
+        self.models, self.models_lock = {}, threading.Lock()
+
+    def model_order(self, key, current, values):
+        """Models to try: the one that answered last, the agent's current one, then the rest of its list."""
+        with self.models_lock:
+            state = self.models.setdefault(key, {"good": None, "bad": {}})
+            now = time.monotonic()
+            bad = {value for value, moment in state["bad"].items() if now - moment < MODEL_RETRY_SECONDS}
+            good = state["good"]
+        start = values.index(current)
+        order = [current] + values[start + 1:] + values[:start]
+        if good in values:
+            order.remove(good)
+            order.insert(0, good)
+        fresh = [value for value in order if value not in bad]
+        return (fresh or [current])[:MODEL_ATTEMPTS]
+
+    def model_result(self, key, value, answered):
+        with self.models_lock:
+            state = self.models.setdefault(key, {"good": None, "bad": {}})
+            if answered:
+                state["good"] = value
+                state["bad"].pop(value, None)
+            else:
+                state["bad"][value] = time.monotonic()
+                if state["good"] == value:
+                    state["good"] = None
+
+    def installed(self):
+        """Profiles whose CLI is on this computer; nothing is started."""
+        result = []
+        for key, profile in self.config["profiles"].items():
+            with contextlib.suppress(BridgeError, OSError):
+                resolve_command(profile)
+                result.append({"id": key, "object": "model", "owned_by": "local-acp", "name": profile.get("title", key)})
+        return result
+
+    def complete(self, body):
+        if len(encode(body)) > self.config["maxPayloadBytes"]:
+            raise BridgeError("payload_limit", 413)
+        model, messages, tools = validate_request(body, self.config)
+        if not self.slots.acquire(blocking=False):
+            raise BridgeError("bridge_busy", 429)
+        connection, handoff = None, None
+        try:
+            profile = self.config["profiles"][model]
+            command = resolve_command(profile)
+            # Cleanup the agent before attempting to remove its cwd, also on errors.
+            # Windows may hold the folder for a moment after the agent is killed: never mask the real error.
+            with tempfile.TemporaryDirectory(prefix="iia-acp-", ignore_cleanup_errors=True) as temporary:
+                try:
+                    cwd = profile.get("cwd") or str(Path(temporary).resolve())
+                    env = os.environ.copy()
+                    for key in (self.config["tokenEnv"], "IIA_MCP_TOKEN", "IIA_MCP_URL"):
+                        env.pop(key, None)
+                    env.update(profile.get("env", {}))
+                    handoff = Handoff(tools, self.config["maxPayloadBytes"])
+                    tree = ProcessTree(command, cwd, env)
+                    connection = AcpConnection(tree, self.config["maxOutputBytes"], time.monotonic() + self.config["timeoutSeconds"], handoff)
+                    init = connection.rpc(1, "initialize", {"protocolVersion": 1, "clientCapabilities": {}, "clientInfo": {"name": "iia-acp-bridge", "version": "1.0.0"}})
+                    if init is None or type(init.get("protocolVersion")) is not int or init["protocolVersion"] != 1:
+                        raise BridgeError("unsupported_acp_version")
+                    session = connection.rpc(2, "session/new", session_params(profile, cwd, handoff, tools))
+                    if session is None or not isinstance(session.get("sessionId"), str) or not session["sessionId"]:
+                        raise BridgeError("invalid_agent_output")
+                    connection.session_id = session["sessionId"]
+                    prompt = [{"type": "text", "text": PROMPT_RULES + encode(messages).decode("utf-8")}]
+                    selector = model_selector(session)
+                    if selector is None:
+                        result, used = connection.rpc(3, "session/prompt", {"sessionId": connection.session_id, "prompt": prompt}), None
+                    else:
+                        result, used = self.prompt_models(model, connection, handoff, selector, session_params(profile, cwd, handoff, tools), prompt)
+                    message = {"role": "assistant", "content": "".join(connection.text)}
+                    call = handoff.call
+                    if call:
+                        message["tool_calls"] = [{"id": "call_" + uuid.uuid4().hex, "type": "function", "function": {"name": call["name"], "arguments": encode(call["arguments"]).decode("utf-8")}}]
+                        reason = "tool_calls"
+                    else:
+                        stop = result.get("stopReason") if result else None
+                        if stop not in {"end_turn", "max_tokens", "max_turn_requests", "refusal", "cancelled"}:
+                            raise BridgeError("invalid_agent_output")
+                        if stop == "cancelled":
+                            raise BridgeError("agent_cancelled")
+                        reason = "length" if stop in {"max_tokens", "max_turn_requests"} else "stop"
+                    response = {"id": "chatcmpl-" + uuid.uuid4().hex, "object": "chat.completion", "created": int(time.time()), "model": model,
+                                "choices": [{"index": 0, "message": message, "finish_reason": reason}],
+                                "usage": {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}}
+                    if used:
+                        response["agent_model"] = used
+                    return response
+                finally:
+                    if connection:
+                        connection.close()
+        except BridgeError:
+            raise
+        except Exception:
+            raise BridgeError("bridge_internal_error", 500) from None
+        finally:
+            if handoff:
+                handoff.close()
+            self.slots.release()
+
+    def prompt_models(self, key, connection, handoff, selector, params, prompt):
+        """Prompt the agent's models in turn while they refuse; a refused session is replaced with a clean one.
+        Only a model the bridge selected itself is reported: an agent may name a default it does not use."""
+        option, current, values = selector
+        request_id = 3
+        order = self.model_order(key, current, values)
+        for number, value in enumerate(order):
+            if number:
+                session = connection.rpc(request_id, "session/new", params)
+                request_id += 1
+                if session is None or not isinstance(session.get("sessionId"), str) or not session["sessionId"]:
+                    raise BridgeError("invalid_agent_output")
+                connection.session_id, current = session["sessionId"], (model_selector(session) or selector)[1]
+            if value != current:
+                connection.rpc(request_id, "session/set_config_option", {"sessionId": connection.session_id, "configId": option, "value": value})
+                request_id += 1
+            connection.text = []
+            try:
+                result = connection.rpc(request_id, "session/prompt", {"sessionId": connection.session_id, "prompt": prompt})
+            except BridgeError as error:
+                if error.code not in MODEL_ERRORS or handoff.call is not None:
+                    raise
+                self.model_result(key, value, False)
+                if number + 1 == len(order):
+                    raise
+                request_id += 1
+                continue
+            if value == current:
+                return result, None
+            self.model_result(key, value, True)
+            return result, value
+        raise BridgeError("agent_provider_error")
+
+
+def make_server(bridge, port=None):
+    class Handler(QuietHandler):
+        def do_POST(self):
+            if not self.authorized(bridge.token):
+                self.reply(401, {"error": {"code": "unauthorized", "message": "unauthorized"}})
+                return
+            if self.path == "/v1/shutdown":
+                self.reply(200, {"stopping": True})
+                threading.Thread(target=self.server.shutdown, daemon=True).start()
+                return
+            try:
+                if self.path != "/v1/chat/completions":
+                    raise BridgeError("not_found", 404)
+                self.reply(200, bridge.complete(self.read_json(bridge.config["maxPayloadBytes"])))
+            except BridgeError as error:
+                self.reply(error.status, {"error": {"code": error.code, "message": error.code}})
+            except Exception:
+                self.reply(500, {"error": {"code": "bridge_internal_error", "message": "bridge_internal_error"}})
+
+        def do_GET(self):
+            if not self.authorized(bridge.token):
+                self.reply(401, {"error": {"code": "unauthorized"}})
+            elif self.path == "/v1/models":
+                self.reply(200, {"object": "list", "bridge": VERSION, "data": bridge.installed()})
+            else:
+                self.reply(404, {"error": {"code": "not_found"}})
+    return LimitedServer(("127.0.0.1", bridge.config["port"] if port is None else port), Handler, bridge.config["maxParallel"])
+
+
+def mcp_helper():
+    base, token = os.environ.get("IIA_MCP_URL", ""), os.environ.get("IIA_MCP_TOKEN", "")
+    if not re.fullmatch(r"http://127\.0\.0\.1:[0-9]{1,5}", base) or len(token) < 24:
+        return 1
+    opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
+    def request(path, body=None):
+        req = urllib.request.Request(base + path, data=encode(body) if body is not None else None, headers={"Authorization": "Bearer " + token, "Content-Type": "application/json"})
+        with opener.open(req, timeout=10) as response:
+            return decode(response.read(16777217))
+    try:
+        while True:
+            raw = sys.stdin.buffer.readline(16777217)
+            if not raw:
+                break
+            if len(raw) > 16777216:
+                return 1
+            msg = decode(raw)
+            if not isinstance(msg, dict):
+                return 1
+            if "id" not in msg:
+                continue
+            method, error = msg.get("method"), None
+            if method == "initialize":
+                requested = msg.get("params", {}).get("protocolVersion")
+                versions = {"2024-11-05", "2025-03-26", "2025-06-18", "2025-11-25"}
+                result = {"protocolVersion": requested if requested in versions else "2025-11-25", "capabilities": {"tools": {}}, "serverInfo": {"name": "iia-functions", "version": "1.0.0"}}
+            elif method == "ping":
+                result = {}
+            elif method == "tools/list":
+                result = request("/tools")
+            elif method == "tools/call":
+                params = msg.get("params", {})
+                request("/call", {"name": params.get("name"), "arguments": params.get("arguments", {})})
+                # Never execute the tool or return a fabricated result. Wait to be terminated.
+                threading.Event().wait()
+                return 0
+            else:
+                error = {"code": -32601, "message": "Method not found"}
+            answer = {"jsonrpc": "2.0", "id": msg["id"], "error": error} if error else {"jsonrpc": "2.0", "id": msg["id"], "result": result}
+            sys.stdout.buffer.write(encode(answer) + b"\n")
+            sys.stdout.buffer.flush()
+    except Exception:
+        return 1
+    return 0
+
+
+def main(argv=None):
+    parser = argparse.ArgumentParser(description="Локальный HTTP -> ACP v1 мост")
+    parser.add_argument("--config", default=str(Path(__file__).with_name("acp-config.json")))
+    parser.add_argument("--check", action="store_true", help="Проверить наличие команд без запуска агентов")
+    parser.add_argument("--port", type=int, help="Порт вместо порта из конфига")
+    parser.add_argument("--token-file", help="Файл постоянного токена: создаётся, если его нет")
+    parser.add_argument("--mcp-helper", action="store_true", help=argparse.SUPPRESS)
+    args = parser.parse_args(argv)
+    if args.mcp_helper:
+        return mcp_helper()
+    try:
+        path = Path(args.config)
+        config = decode(path.read_text(encoding="utf-8-sig")) if path.is_file() else {}
+        if isinstance(config, dict) and args.port is not None:
+            config["port"] = args.port
+        config = validate_config(config)
+        if args.check:
+            available = False
+            for name, profile in config["profiles"].items():
+                try:
+                    resolve_command(profile)
+                    state, available = "available", True
+                except BridgeError as error:
+                    state = error.code
+                say(name + ": " + state)
+            return 0 if available else 1
+        token = os.environ.get(config["tokenEnv"], "")
+        if args.token_file and not token:
+            token = secrets.token_urlsafe(32)  # replaced from the file once the port is bound
+        else:
+            args.token_file = None
+        bridge = Bridge(config, token)
+        with make_server(bridge) as server:
+            # The token file is read or written only once the port is ours: a second copy exits on bind.
+            if args.token_file:
+                bridge.token = token_from_file(args.token_file)
+            say("ACP bridge listening on loopback port " + str(config["port"]))
+            try:
+                server.serve_forever(poll_interval=.1)
+            except KeyboardInterrupt:
+                pass
+        return 0
+    except BridgeError as error:
+        say("ACP bridge: " + error.code, True)
+    except Exception:
+        say("ACP bridge: invalid_config_or_start_failed", True)
+    return 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

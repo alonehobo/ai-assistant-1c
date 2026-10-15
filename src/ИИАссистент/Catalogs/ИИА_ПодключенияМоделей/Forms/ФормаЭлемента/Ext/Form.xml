@@ -1,0 +1,502 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<Form xmlns="http://v8.1c.ru/8.3/xcf/logform" xmlns:app="http://v8.1c.ru/8.2/managed-application/core" xmlns:cfg="http://v8.1c.ru/8.1/data/enterprise/current-config" xmlns:dcscor="http://v8.1c.ru/8.1/data-composition-system/core" xmlns:dcssch="http://v8.1c.ru/8.1/data-composition-system/schema" xmlns:dcsset="http://v8.1c.ru/8.1/data-composition-system/settings" xmlns:ent="http://v8.1c.ru/8.1/data/enterprise" xmlns:lf="http://v8.1c.ru/8.2/managed-application/logform" xmlns:style="http://v8.1c.ru/8.1/data/ui/style" xmlns:sys="http://v8.1c.ru/8.1/data/ui/fonts/system" xmlns:v8="http://v8.1c.ru/8.1/data/core" xmlns:v8ui="http://v8.1c.ru/8.1/data/ui" xmlns:web="http://v8.1c.ru/8.1/data/ui/colors/web" xmlns:win="http://v8.1c.ru/8.1/data/ui/colors/windows" xmlns:xr="http://v8.1c.ru/8.3/xcf/readable" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="2.20">
+	<Title>
+		<v8:item>
+			<v8:lang>ru</v8:lang>
+			<v8:content>Подключение к языковой модели</v8:content>
+		</v8:item>
+	</Title>
+	<AutoTitle>false</AutoTitle>
+	<AutoCommandBar name="ФормаКоманднаяПанель" id="-1">
+		<ChildItems>
+			<Button name="ПроверитьПодключение" id="1">
+				<Type>CommandBarButton</Type>
+				<Representation>PictureAndText</Representation>
+				<CommandName>Form.Command.ПроверитьПодключение</CommandName>
+				<Picture>
+					<xr:Ref>CommonPicture.ИИА_ВыполненоУспешно</xr:Ref>
+					<xr:LoadTransparent>true</xr:LoadTransparent>
+				</Picture>
+				<ExtendedTooltip name="ПроверитьПодключениеРасширеннаяПодсказка" id="2"/>
+			</Button>
+		</ChildItems>
+	</AutoCommandBar>
+	<Events>
+		<Event name="OnCreateAtServer">ПриСозданииНаСервере</Event>
+		<Event name="OnReadAtServer">ПриЧтенииНаСервере</Event>
+		<Event name="AfterWriteAtServer">ПослеЗаписиНаСервере</Event>
+	</Events>
+	<ChildItems>
+		<UsualGroup name="ГруппаШапка" id="3">
+			<Representation>None</Representation>
+			<ShowTitle>false</ShowTitle>
+			<ExtendedTooltip name="ГруппаШапкаРасширеннаяПодсказка" id="4"/>
+			<ChildItems>
+				<InputField name="Наименование" id="5">
+					<DataPath>Объект.Наименование</DataPath>
+					<HorizontalStretch>true</HorizontalStretch>
+					<ContextMenu name="НаименованиеКонтекстноеМеню" id="6"/>
+					<ExtendedTooltip name="НаименованиеРасширеннаяПодсказка" id="7"/>
+				</InputField>
+				<CheckBoxField name="Используется" id="8">
+					<DataPath>Объект.Используется</DataPath>
+					<Title>
+						<v8:item>
+							<v8:lang>ru</v8:lang>
+							<v8:content>Используется</v8:content>
+						</v8:item>
+					</Title>
+					<TitleLocation>Right</TitleLocation>
+					<CheckBoxType>Auto</CheckBoxType>
+					<ContextMenu name="ИспользуетсяКонтекстноеМеню" id="9"/>
+					<ExtendedTooltip name="ИспользуетсяРасширеннаяПодсказка" id="10"/>
+				</CheckBoxField>
+			</ChildItems>
+		</UsualGroup>
+		<UsualGroup name="ГруппаПровайдер" id="11">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Провайдер</v8:content>
+				</v8:item>
+			</Title>
+			<Group>Vertical</Group>
+			<Behavior>Collapsible</Behavior>
+			<ExtendedTooltip name="ГруппаПровайдерРасширеннаяПодсказка" id="12"/>
+			<ChildItems>
+				<InputField name="Провайдер" id="55">
+					<DataPath>Объект.Провайдер</DataPath>
+					<ContextMenu name="ПровайдерКонтекстноеМеню" id="56"/>
+					<ExtendedTooltip name="ПровайдерРасширеннаяПодсказка" id="57"/>
+					<Events>
+						<Event name="OnChange">ПровайдерПриИзменении</Event>
+					</Events>
+				</InputField>
+				<InputField name="Протокол" id="13">
+					<DataPath>Объект.Протокол</DataPath>
+					<Title>
+						<v8:item>
+							<v8:lang>ru</v8:lang>
+							<v8:content>Протокол</v8:content>
+						</v8:item>
+					</Title>
+					<ToolTipRepresentation>ShowBottom</ToolTipRepresentation>
+					<Width>30</Width>
+					<ContextMenu name="ПротоколКонтекстноеМеню" id="14"/>
+					<ExtendedTooltip name="ПротоколРасширеннаяПодсказка" id="15">
+						<Title formatted="false">
+							<v8:item>
+								<v8:lang>ru</v8:lang>
+								<v8:content>Пусто — OpenAI-совместимый (chat/completions). Для Anthropic — адрес https://api.anthropic.com/v1.</v8:content>
+							</v8:item>
+						</Title>
+					</ExtendedTooltip>
+				</InputField>
+				<InputField name="АдресAPI" id="16">
+					<DataPath>Объект.АдресAPI</DataPath>
+					<Title>
+						<v8:item>
+							<v8:lang>ru</v8:lang>
+							<v8:content>Адрес API</v8:content>
+						</v8:item>
+					</Title>
+					<HorizontalStretch>true</HorizontalStretch>
+					<InputHint>
+						<v8:item>
+							<v8:lang>ru</v8:lang>
+							<v8:content>https://api.openai.com/v1, https://api.deepseek.com, адрес шлюза</v8:content>
+						</v8:item>
+					</InputHint>
+					<ContextMenu name="АдресAPIКонтекстноеМеню" id="17"/>
+					<ExtendedTooltip name="АдресAPIРасширеннаяПодсказка" id="18"/>
+				</InputField>
+				<InputField name="Прокси" id="90">
+					<DataPath>Объект.Прокси</DataPath>
+					<ToolTip>
+						<v8:item>
+							<v8:lang>ru</v8:lang>
+							<v8:content>Пусто - прокси из настроек ассистента. «Напрямую» - для моделей, доступных без прокси. Адреса localhost (мост ACP, локальные модели) всегда идут без прокси.</v8:content>
+						</v8:item>
+					</ToolTip>
+					<ToolTipRepresentation>Button</ToolTipRepresentation>
+					<ClearButton>true</ClearButton>
+					<InputHint>
+						<v8:item>
+							<v8:lang>ru</v8:lang>
+							<v8:content>Как в настройках ассистента</v8:content>
+						</v8:item>
+					</InputHint>
+					<ContextMenu name="ПроксиКонтекстноеМеню" id="91"/>
+					<ExtendedTooltip name="ПроксиРасширеннаяПодсказка" id="92"/>
+				</InputField>
+				<InputField name="Модель" id="19">
+					<DataPath>Объект.Модель</DataPath>
+					<Title>
+						<v8:item>
+							<v8:lang>ru</v8:lang>
+							<v8:content>Модель</v8:content>
+						</v8:item>
+					</Title>
+					<Width>30</Width>
+					<ChoiceButton>true</ChoiceButton>
+					<InputHint>
+						<v8:item>
+							<v8:lang>ru</v8:lang>
+							<v8:content>deepseek-chat, gpt-4o-mini, ...</v8:content>
+						</v8:item>
+					</InputHint>
+					<ContextMenu name="МодельКонтекстноеМеню" id="20"/>
+					<ExtendedTooltip name="МодельРасширеннаяПодсказка" id="21"/>
+					<Events>
+						<Event name="StartChoice">МодельНачалоВыбора</Event>
+					</Events>
+				</InputField>
+			</ChildItems>
+		</UsualGroup>
+		<UsualGroup name="ГруппаДоступ" id="22">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Доступ и данные</v8:content>
+				</v8:item>
+			</Title>
+			<Group>Vertical</Group>
+			<Behavior>Collapsible</Behavior>
+			<ExtendedTooltip name="ГруппаДоступРасширеннаяПодсказка" id="23"/>
+			<ChildItems>
+				<UsualGroup name="ГруппаКлюч" id="24">
+					<Representation>None</Representation>
+					<ShowTitle>false</ShowTitle>
+					<ExtendedTooltip name="ГруппаКлючРасширеннаяПодсказка" id="25"/>
+					<ChildItems>
+						<InputField name="КлючAPI" id="26">
+							<DataPath>КлючAPI</DataPath>
+							<Title>
+								<v8:item>
+									<v8:lang>ru</v8:lang>
+									<v8:content>Ключ API</v8:content>
+								</v8:item>
+							</Title>
+							<Width>30</Width>
+							<PasswordMode>true</PasswordMode>
+							<InputHint>
+								<v8:item>
+									<v8:lang>ru</v8:lang>
+									<v8:content>новый ключ (пусто — не менять)</v8:content>
+								</v8:item>
+							</InputHint>
+							<ContextMenu name="КлючAPIКонтекстноеМеню" id="27"/>
+							<ExtendedTooltip name="КлючAPIРасширеннаяПодсказка" id="28"/>
+						</InputField>
+						<LabelField name="СостояниеКлюча" id="29">
+							<DataPath>СостояниеКлюча</DataPath>
+							<TitleLocation>None</TitleLocation>
+							<ContextMenu name="СостояниеКлючаКонтекстноеМеню" id="30"/>
+							<ExtendedTooltip name="СостояниеКлючаРасширеннаяПодсказка" id="31"/>
+						</LabelField>
+					</ChildItems>
+				</UsualGroup>
+				<InputField name="ОбластьДоступа" id="87">
+					<DataPath>Объект.ОбластьДоступа</DataPath>
+					<DropListButton>true</DropListButton>
+					<ChoiceList>
+						<xr:Item>
+							<xr:Presentation/>
+							<xr:CheckState>0</xr:CheckState>
+							<xr:Value xsi:type="FormChoiceListDesTimeValue">
+								<Presentation/>
+								<Value xsi:type="xs:string">GIGACHAT_API_PERS</Value>
+							</xr:Value>
+						</xr:Item>
+						<xr:Item>
+							<xr:Presentation/>
+							<xr:CheckState>0</xr:CheckState>
+							<xr:Value xsi:type="FormChoiceListDesTimeValue">
+								<Presentation/>
+								<Value xsi:type="xs:string">GIGACHAT_API_B2B</Value>
+							</xr:Value>
+						</xr:Item>
+						<xr:Item>
+							<xr:Presentation/>
+							<xr:CheckState>0</xr:CheckState>
+							<xr:Value xsi:type="FormChoiceListDesTimeValue">
+								<Presentation/>
+								<Value xsi:type="xs:string">GIGACHAT_API_CORP</Value>
+							</xr:Value>
+						</xr:Item>
+					</ChoiceList>
+					<ContextMenu name="ОбластьДоступаКонтекстноеМеню" id="88"/>
+					<ExtendedTooltip name="ОбластьДоступаРасширеннаяПодсказка" id="89"/>
+				</InputField>
+				<InputField name="Доверие" id="32">
+					<DataPath>Объект.Доверие</DataPath>
+					<Title>
+						<v8:item>
+							<v8:lang>ru</v8:lang>
+							<v8:content>Уровень доверия</v8:content>
+						</v8:item>
+					</Title>
+					<ToolTipRepresentation>ShowBottom</ToolTipRepresentation>
+					<Width>30</Width>
+					<ContextMenu name="ДовериеКонтекстноеМеню" id="33"/>
+					<ExtendedTooltip name="ДовериеРасширеннаяПодсказка" id="34">
+						<Title formatted="false">
+							<v8:item>
+								<v8:lang>ru</v8:lang>
+								<v8:content>Т1 — модель в контуре компании: получает все классы К0–К4. Т2 — облако РФ по договору: К0–К2 (с коммерческой тайной). Т3 — внешнее облако (по умолчанию): только К0–К1. Персональные, кадровые и зарплатные данные не получает ни одна модель. Какие объекты к какому классу относятся — «Настройки → Доступ к данным».</v8:content>
+							</v8:item>
+						</Title>
+					</ExtendedTooltip>
+				</InputField>
+			</ChildItems>
+		</UsualGroup>
+		<UsualGroup name="ГруппаРассуждения" id="58">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Параметры модели</v8:content>
+				</v8:item>
+			</Title>
+			<Group>Vertical</Group>
+			<Behavior>Collapsible</Behavior>
+			<ExtendedTooltip name="ГруппаРассужденияРасширеннаяПодсказка" id="59"/>
+			<ChildItems>
+				<InputField name="Рассуждения" id="60">
+					<DataPath>Объект.Рассуждения</DataPath>
+					<ContextMenu name="РассужденияКонтекстноеМеню" id="61"/>
+					<ExtendedTooltip name="РассужденияРасширеннаяПодсказка" id="62"/>
+					<Events>
+						<Event name="OnChange">РассужденияПриИзменении</Event>
+					</Events>
+				</InputField>
+				<InputField name="БюджетРассуждений" id="63">
+					<DataPath>Объект.БюджетРассуждений</DataPath>
+					<ContextMenu name="БюджетРассужденийКонтекстноеМеню" id="64"/>
+					<ExtendedTooltip name="БюджетРассужденийРасширеннаяПодсказка" id="65"/>
+				</InputField>
+				<InputField name="МаксимумТокенов" id="66">
+					<DataPath>Объект.МаксимумТокенов</DataPath>
+					<ContextMenu name="МаксимумТокеновКонтекстноеМеню" id="67"/>
+					<ExtendedTooltip name="МаксимумТокеновРасширеннаяПодсказка" id="68"/>
+				</InputField>
+				<UsualGroup name="ГруппаТемпература" id="69">
+					<Group>Horizontal</Group>
+					<Representation>None</Representation>
+					<ShowTitle>false</ShowTitle>
+					<ExtendedTooltip name="ГруппаТемператураРасширеннаяПодсказка" id="70"/>
+					<ChildItems>
+						<CheckBoxField name="ЗадатьТемпературу" id="71">
+							<DataPath>Объект.ЗадатьТемпературу</DataPath>
+							<TitleLocation>Right</TitleLocation>
+							<ContextMenu name="ЗадатьТемпературуКонтекстноеМеню" id="72"/>
+							<ExtendedTooltip name="ЗадатьТемпературуРасширеннаяПодсказка" id="73"/>
+							<Events>
+								<Event name="OnChange">ЗадатьТемпературуПриИзменении</Event>
+							</Events>
+						</CheckBoxField>
+						<InputField name="Температура" id="74">
+							<DataPath>Объект.Температура</DataPath>
+							<TitleLocation>None</TitleLocation>
+							<Width>6</Width>
+							<ChoiceButton>false</ChoiceButton>
+							<SpinButton>true</SpinButton>
+							<ContextMenu name="ТемператураКонтекстноеМеню" id="75"/>
+							<ExtendedTooltip name="ТемператураРасширеннаяПодсказка" id="76"/>
+						</InputField>
+					</ChildItems>
+				</UsualGroup>
+			</ChildItems>
+		</UsualGroup>
+		<UsualGroup name="ГруппаАгрегатор" id="77">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Маршрутизация агрегатора</v8:content>
+				</v8:item>
+			</Title>
+			<Group>Vertical</Group>
+			<Behavior>Collapsible</Behavior>
+			<ExtendedTooltip name="ГруппаАгрегаторРасширеннаяПодсказка" id="78"/>
+			<ChildItems>
+				<InputField name="ПорядокПровайдеров" id="79">
+					<DataPath>Объект.ПорядокПровайдеров</DataPath>
+					<InputHint>
+						<v8:item>
+							<v8:lang>ru</v8:lang>
+							<v8:content>deepseek, z-ai</v8:content>
+						</v8:item>
+					</InputHint>
+					<ContextMenu name="ПорядокПровайдеровКонтекстноеМеню" id="80"/>
+					<ExtendedTooltip name="ПорядокПровайдеровРасширеннаяПодсказка" id="81"/>
+				</InputField>
+				<CheckBoxField name="РазрешитьДругихПровайдеров" id="82">
+					<DataPath>Объект.РазрешитьДругихПровайдеров</DataPath>
+					<TitleLocation>Right</TitleLocation>
+					<ContextMenu name="РазрешитьДругихПровайдеровКонтекстноеМеню" id="83"/>
+					<ExtendedTooltip name="РазрешитьДругихПровайдеровРасширеннаяПодсказка" id="84"/>
+				</CheckBoxField>
+			</ChildItems>
+		</UsualGroup>
+		<UsualGroup name="ГруппаПараметры" id="35">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Параметры</v8:content>
+				</v8:item>
+			</Title>
+			<Group>Vertical</Group>
+			<Behavior>Collapsible</Behavior>
+			<Collapsed>true</Collapsed>
+			<ExtendedTooltip name="ГруппаПараметрыРасширеннаяПодсказка" id="36"/>
+			<ChildItems>
+				<InputField name="Порядок" id="37">
+					<DataPath>Объект.Порядок</DataPath>
+					<ToolTipRepresentation>ShowBottom</ToolTipRepresentation>
+					<Width>6</Width>
+					<ContextMenu name="ПорядокКонтекстноеМеню" id="38"/>
+					<ExtendedTooltip name="ПорядокРасширеннаяПодсказка" id="39">
+						<Title formatted="false">
+							<v8:item>
+								<v8:lang>ru</v8:lang>
+								<v8:content>Место в общей цепочке моделей: первая — основная, следующие — резерв при сбое.</v8:content>
+							</v8:item>
+						</Title>
+					</ExtendedTooltip>
+				</InputField>
+				<InputField name="ТаймаутСекунд" id="40">
+					<DataPath>Объект.ТаймаутСекунд</DataPath>
+					<Title>
+						<v8:item>
+							<v8:lang>ru</v8:lang>
+							<v8:content>Таймаут, секунд</v8:content>
+						</v8:item>
+					</Title>
+					<Width>6</Width>
+					<ContextMenu name="ТаймаутСекундКонтекстноеМеню" id="41"/>
+					<ExtendedTooltip name="ТаймаутСекундРасширеннаяПодсказка" id="42"/>
+				</InputField>
+				<CheckBoxField name="ПоддерживаетИзображения" id="43">
+					<DataPath>Объект.ПоддерживаетИзображения</DataPath>
+					<Title>
+						<v8:item>
+							<v8:lang>ru</v8:lang>
+							<v8:content>Принимает изображения (скриншоты)</v8:content>
+						</v8:item>
+					</Title>
+					<TitleLocation>Right</TitleLocation>
+					<CheckBoxType>Auto</CheckBoxType>
+					<ContextMenu name="ПоддерживаетИзображенияКонтекстноеМеню" id="44"/>
+					<ExtendedTooltip name="ПоддерживаетИзображенияРасширеннаяПодсказка" id="45"/>
+				</CheckBoxField>
+				<CheckBoxField name="ПоддерживаетДокументы" id="49">
+					<DataPath>Объект.ПоддерживаетДокументы</DataPath>
+					<Title>
+						<v8:item>
+							<v8:lang>ru</v8:lang>
+							<v8:content>Принимает документы</v8:content>
+						</v8:item>
+					</Title>
+					<TitleLocation>Right</TitleLocation>
+					<ToolTip>
+						<v8:item>
+							<v8:lang>ru</v8:lang>
+							<v8:content>Модели можно отправлять файлы PDF (содержимое PDF не проверяется на персональные данные). Текстовые файлы и Excel передаются текстом и проходят маскировку.</v8:content>
+						</v8:item>
+					</ToolTip>
+					<ContextMenu name="ПоддерживаетДокументыКонтекстноеМеню" id="50"/>
+					<ExtendedTooltip name="ПоддерживаетДокументыРасширеннаяПодсказка" id="51"/>
+				</CheckBoxField>
+			</ChildItems>
+		</UsualGroup>
+		<UsualGroup name="ГруппаДополнительно" id="85">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Дополнительно</v8:content>
+				</v8:item>
+			</Title>
+			<Group>Vertical</Group>
+			<Behavior>Collapsible</Behavior>
+			<ExtendedTooltip name="ГруппаДополнительноРасширеннаяПодсказка" id="86"/>
+			<ChildItems>
+				<InputField name="ПараметрыЗапроса" id="52">
+					<DataPath>Объект.ПараметрыЗапроса</DataPath>
+					<TitleLocation>Top</TitleLocation>
+					<ToolTip>
+						<v8:item>
+							<v8:lang>ru</v8:lang>
+							<v8:content>JSON-объект с дополнительными полями тела запроса к API. Например, DeepSeek: {"thinking": {"type": "disabled"}} или {"reasoning_effort": "low"}; RouterAI: {"provider": {"order": ["z-ai"], "allow_fallbacks": true}}. Поля model, messages, tools, tool_choice, stream и system задаёт ассистент, их указывать нельзя.</v8:content>
+						</v8:item>
+					</ToolTip>
+					<Height>3</Height>
+					<MultiLine>true</MultiLine>
+					<InputHint>
+						<v8:item>
+							<v8:lang>ru</v8:lang>
+							<v8:content>{"top_p": 0.9}</v8:content>
+						</v8:item>
+					</InputHint>
+					<ContextMenu name="ПараметрыЗапросаКонтекстноеМеню" id="53"/>
+					<ExtendedTooltip name="ПараметрыЗапросаРасширеннаяПодсказка" id="54"/>
+				</InputField>
+			</ChildItems>
+		</UsualGroup>
+		<InputField name="Комментарий" id="46">
+			<DataPath>Объект.Комментарий</DataPath>
+			<AutoMaxWidth>false</AutoMaxWidth>
+			<HorizontalStretch>true</HorizontalStretch>
+			<ContextMenu name="КомментарийКонтекстноеМеню" id="47"/>
+			<ExtendedTooltip name="КомментарийРасширеннаяПодсказка" id="48"/>
+		</InputField>
+	</ChildItems>
+	<Attributes>
+		<Attribute name="Объект" id="49">
+			<Type>
+				<v8:Type>cfg:CatalogObject.ИИА_ПодключенияМоделей</v8:Type>
+			</Type>
+			<MainAttribute>true</MainAttribute>
+			<SavedData>true</SavedData>
+		</Attribute>
+		<Attribute name="КлючAPI" id="50">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Ключ API</v8:content>
+				</v8:item>
+			</Title>
+			<Type>
+				<v8:Type>xs:string</v8:Type>
+				<v8:StringQualifiers>
+					<v8:Length>500</v8:Length>
+					<v8:AllowedLength>Variable</v8:AllowedLength>
+				</v8:StringQualifiers>
+			</Type>
+		</Attribute>
+		<Attribute name="СостояниеКлюча" id="51">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Состояние ключа</v8:content>
+				</v8:item>
+			</Title>
+			<Type>
+				<v8:Type>xs:string</v8:Type>
+				<v8:StringQualifiers>
+					<v8:Length>50</v8:Length>
+					<v8:AllowedLength>Variable</v8:AllowedLength>
+				</v8:StringQualifiers>
+			</Type>
+		</Attribute>
+	</Attributes>
+	<Commands>
+		<Command name="ПроверитьПодключение" id="52">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Проверить подключение</v8:content>
+				</v8:item>
+			</Title>
+			<Action>ПроверитьПодключение</Action>
+		</Command>
+	</Commands>
+</Form>

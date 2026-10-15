@@ -1,0 +1,1263 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<Form xmlns="http://v8.1c.ru/8.3/xcf/logform" xmlns:app="http://v8.1c.ru/8.2/managed-application/core" xmlns:cfg="http://v8.1c.ru/8.1/data/enterprise/current-config" xmlns:dcscor="http://v8.1c.ru/8.1/data-composition-system/core" xmlns:dcssch="http://v8.1c.ru/8.1/data-composition-system/schema" xmlns:dcsset="http://v8.1c.ru/8.1/data-composition-system/settings" xmlns:ent="http://v8.1c.ru/8.1/data/enterprise" xmlns:lf="http://v8.1c.ru/8.2/managed-application/logform" xmlns:style="http://v8.1c.ru/8.1/data/ui/style" xmlns:sys="http://v8.1c.ru/8.1/data/ui/fonts/system" xmlns:v8="http://v8.1c.ru/8.1/data/core" xmlns:v8ui="http://v8.1c.ru/8.1/data/ui" xmlns:web="http://v8.1c.ru/8.1/data/ui/colors/web" xmlns:win="http://v8.1c.ru/8.1/data/ui/colors/windows" xmlns:xr="http://v8.1c.ru/8.3/xcf/readable" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="2.20">
+	<Title>
+		<v8:item>
+			<v8:lang>ru</v8:lang>
+			<v8:content>Настройки ИИ-ассистента</v8:content>
+		</v8:item>
+	</Title>
+	<AutoTitle>false</AutoTitle>
+	<AutoCommandBar name="ФормаКоманднаяПанель" id="-1">
+		<ChildItems>
+			<Button name="ФормаЗаписатьИЗакрыть" id="1">
+				<Type>CommandBarButton</Type>
+				<DefaultButton>true</DefaultButton>
+				<CommandName>Form.Command.ЗаписатьИЗакрыть</CommandName>
+				<ExtendedTooltip name="ФормаЗаписатьИЗакрытьРасширеннаяПодсказка" id="2"/>
+			</Button>
+			<Button name="ФормаОткрытьЧат" id="3">
+				<Type>CommandBarButton</Type>
+				<Representation>PictureAndText</Representation>
+				<CommandName>Form.Command.ОткрытьЧат</CommandName>
+				<Picture>
+					<xr:Ref>CommonPicture.ИИА_Ассистент</xr:Ref>
+					<xr:LoadTransparent>true</xr:LoadTransparent>
+				</Picture>
+				<ExtendedTooltip name="ФормаОткрытьЧатРасширеннаяПодсказка" id="4"/>
+			</Button>
+		</ChildItems>
+	</AutoCommandBar>
+	<Events>
+		<Event name="OnCreateAtServer">ПриСозданииНаСервере</Event>
+	</Events>
+	<ChildItems>
+		<LabelDecoration name="ДекорацияОписание" id="5">
+			<AutoMaxWidth>false</AutoMaxWidth>
+			<HorizontalStretch>true</HorizontalStretch>
+			<TextColor>style:ПоясняющийТекст</TextColor>
+			<Title formatted="false">
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Чат с ИИ по данным базы. Подключите модель, проверьте доступ и включите ассистента — он появится у пользователей с ролью «ИИ-ассистент: пользователь».</v8:content>
+				</v8:item>
+			</Title>
+			<ContextMenu name="ДекорацияОписаниеКонтекстноеМеню" id="6"/>
+			<ExtendedTooltip name="ДекорацияОписаниеРасширеннаяПодсказка" id="7"/>
+		</LabelDecoration>
+		<UsualGroup name="ГруппаАссистент" id="8">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Ассистент</v8:content>
+				</v8:item>
+			</Title>
+			<Group>Vertical</Group>
+			<Behavior>Collapsible</Behavior>
+			<ExtendedTooltip name="ГруппаАссистентРасширеннаяПодсказка" id="9"/>
+			<ChildItems>
+				<CheckBoxField name="Использовать" id="10">
+					<DataPath>Использовать</DataPath>
+					<Title>
+						<v8:item>
+							<v8:lang>ru</v8:lang>
+							<v8:content>Использовать ИИ-ассистента</v8:content>
+						</v8:item>
+					</Title>
+					<TitleLocation>Right</TitleLocation>
+					<ToolTipRepresentation>ShowBottom</ToolTipRepresentation>
+					<CheckBoxType>Auto</CheckBoxType>
+					<ContextMenu name="ИспользоватьКонтекстноеМеню" id="11"/>
+					<ExtendedTooltip name="ИспользоватьРасширеннаяПодсказка" id="12">
+						<Title formatted="false">
+							<v8:item>
+								<v8:lang>ru</v8:lang>
+								<v8:content>Главный выключатель. Когда он выключен, чат и команда «Спросить ИИ» недоступны.</v8:content>
+							</v8:item>
+						</Title>
+					</ExtendedTooltip>
+				</CheckBoxField>
+				<UsualGroup name="ГруппаПрофиль" id="13">
+					<Representation>None</Representation>
+					<ShowTitle>false</ShowTitle>
+					<ExtendedTooltip name="ГруппаПрофильРасширеннаяПодсказка" id="14"/>
+					<ChildItems>
+						<InputField name="ПолеПрофильПоУмолчанию" id="15">
+							<DataPath>ПрофильПоУмолчанию</DataPath>
+							<Title>
+								<v8:item>
+									<v8:lang>ru</v8:lang>
+									<v8:content>Профиль по умолчанию</v8:content>
+								</v8:item>
+							</Title>
+							<ToolTipRepresentation>ShowBottom</ToolTipRepresentation>
+							<Width>30</Width>
+							<ContextMenu name="ПолеПрофильПоУмолчаниюКонтекстноеМеню" id="16"/>
+							<ExtendedTooltip name="ПолеПрофильПоУмолчаниюРасширеннаяПодсказка" id="17">
+								<Title formatted="false">
+									<v8:item>
+										<v8:lang>ru</v8:lang>
+										<v8:content>Для пользователей, не включённых ни в один профиль доступа.</v8:content>
+									</v8:item>
+								</Title>
+							</ExtendedTooltip>
+						</InputField>
+						<Button name="КнопкаПрофилиДоступа" id="18">
+							<Type>Hyperlink</Type>
+							<CommandName>Form.Command.ПрофилиДоступа</CommandName>
+							<ExtendedTooltip name="КнопкаПрофилиДоступаРасширеннаяПодсказка" id="19"/>
+						</Button>
+					</ChildItems>
+				</UsualGroup>
+				<UsualGroup name="ГруппаПроверкаДоступа" id="20">
+					<Representation>None</Representation>
+					<ShowTitle>false</ShowTitle>
+					<ExtendedTooltip name="ГруппаПроверкаДоступаРасширеннаяПодсказка" id="21"/>
+					<ChildItems>
+						<InputField name="ПолеПользовательДляПроверки" id="22">
+							<DataPath>ПользовательДляПроверки</DataPath>
+							<Title>
+								<v8:item>
+									<v8:lang>ru</v8:lang>
+									<v8:content>Проверить доступ пользователя</v8:content>
+								</v8:item>
+							</Title>
+							<Width>30</Width>
+							<InputHint>
+								<v8:item>
+									<v8:lang>ru</v8:lang>
+									<v8:content>текущий пользователь</v8:content>
+								</v8:item>
+							</InputHint>
+							<ContextMenu name="ПолеПользовательДляПроверкиКонтекстноеМеню" id="23"/>
+							<ExtendedTooltip name="ПолеПользовательДляПроверкиРасширеннаяПодсказка" id="24"/>
+							<Events>
+								<Event name="OnChange">ПользовательДляПроверкиПриИзменении</Event>
+							</Events>
+						</InputField>
+						<Button name="КнопкаПроверитьДоступ" id="25">
+							<Type>Hyperlink</Type>
+							<CommandName>Form.Command.ПроверитьДоступ</CommandName>
+							<ExtendedTooltip name="КнопкаПроверитьДоступРасширеннаяПодсказка" id="26"/>
+						</Button>
+					</ChildItems>
+				</UsualGroup>
+				<InputField name="ПолеДиагностикаДоступа" id="27">
+					<DataPath>ДиагностикаДоступа</DataPath>
+					<ReadOnly>true</ReadOnly>
+					<TitleLocation>None</TitleLocation>
+					<AutoMaxWidth>false</AutoMaxWidth>
+					<Height>3</Height>
+					<HorizontalStretch>true</HorizontalStretch>
+					<VerticalStretch>false</VerticalStretch>
+					<MultiLine>true</MultiLine>
+					<TextColor>style:ПоясняющийТекст</TextColor>
+					<ContextMenu name="ПолеДиагностикаДоступаКонтекстноеМеню" id="28"/>
+					<ExtendedTooltip name="ПолеДиагностикаДоступаРасширеннаяПодсказка" id="29"/>
+				</InputField>
+			</ChildItems>
+		</UsualGroup>
+		<UsualGroup name="ГруппаМодели" id="30">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Модели</v8:content>
+				</v8:item>
+			</Title>
+			<Group>Vertical</Group>
+			<Behavior>Collapsible</Behavior>
+			<ExtendedTooltip name="ГруппаМоделиРасширеннаяПодсказка" id="31"/>
+			<ChildItems>
+				<LabelDecoration name="ДекорацияМодели" id="32">
+					<AutoMaxWidth>false</AutoMaxWidth>
+					<HorizontalStretch>true</HorizontalStretch>
+					<TextColor>style:ПоясняющийТекст</TextColor>
+					<Title formatted="false">
+						<v8:item>
+							<v8:lang>ru</v8:lang>
+							<v8:content>Подключения к провайдерам (ключ API, модель, уровень доверия). Профиль может назначить свою цепочку моделей.</v8:content>
+						</v8:item>
+					</Title>
+					<ContextMenu name="ДекорацияМоделиКонтекстноеМеню" id="33"/>
+					<ExtendedTooltip name="ДекорацияМоделиРасширеннаяПодсказка" id="34"/>
+				</LabelDecoration>
+				<Button name="КнопкаПодключенияМоделей" id="35">
+					<Type>Hyperlink</Type>
+					<CommandName>Form.Command.ПодключенияМоделей</CommandName>
+					<ExtendedTooltip name="КнопкаПодключенияМоделейРасширеннаяПодсказка" id="36"/>
+				</Button>
+				<UsualGroup name="ГруппаПрокси" id="147">
+					<Group>Vertical</Group>
+					<Representation>None</Representation>
+					<ShowTitle>false</ShowTitle>
+					<ExtendedTooltip name="ГруппаПроксиРасширеннаяПодсказка" id="148"/>
+					<ChildItems>
+						<InputField name="ПолеРежимПрокси" id="149">
+							<DataPath>РежимПрокси</DataPath>
+							<Title>
+								<v8:item>
+									<v8:lang>ru</v8:lang>
+									<v8:content>Прокси для моделей</v8:content>
+								</v8:item>
+							</Title>
+							<ToolTip>
+								<v8:item>
+									<v8:lang>ru</v8:lang>
+									<v8:content>Прокси для запросов к моделям, отдельно от настроек прокси 1С. «Как в настройках 1С» — прокси-сервер из общих настроек программы. В подключении к модели можно выбрать «Напрямую» или другой режим. Адреса localhost всегда идут без прокси.</v8:content>
+								</v8:item>
+							</ToolTip>
+							<ToolTipRepresentation>Button</ToolTipRepresentation>
+							<HorizontalStretch>false</HorizontalStretch>
+							<ClearButton>true</ClearButton>
+							<InputHint>
+								<v8:item>
+									<v8:lang>ru</v8:lang>
+									<v8:content>Как в настройках 1С</v8:content>
+								</v8:item>
+							</InputHint>
+							<ContextMenu name="ПолеРежимПроксиКонтекстноеМеню" id="150"/>
+							<ExtendedTooltip name="ПолеРежимПроксиРасширеннаяПодсказка" id="151"/>
+							<Events>
+								<Event name="OnChange">ПолеРежимПроксиПриИзменении</Event>
+							</Events>
+						</InputField>
+						<UsualGroup name="ГруппаСвойПрокси" id="152">
+							<Group>Horizontal</Group>
+							<Representation>None</Representation>
+							<ShowTitle>false</ShowTitle>
+							<ExtendedTooltip name="ГруппаСвойПроксиРасширеннаяПодсказка" id="153"/>
+							<ChildItems>
+								<InputField name="ПолеАдресПрокси" id="154">
+									<DataPath>АдресПрокси</DataPath>
+									<Title>
+										<v8:item>
+											<v8:lang>ru</v8:lang>
+											<v8:content>Адрес</v8:content>
+										</v8:item>
+									</Title>
+									<Width>20</Width>
+									<HorizontalStretch>false</HorizontalStretch>
+									<InputHint>
+										<v8:item>
+											<v8:lang>ru</v8:lang>
+											<v8:content>127.0.0.1:10809</v8:content>
+										</v8:item>
+									</InputHint>
+									<ContextMenu name="ПолеАдресПроксиКонтекстноеМеню" id="155"/>
+									<ExtendedTooltip name="ПолеАдресПроксиРасширеннаяПодсказка" id="156"/>
+								</InputField>
+								<InputField name="ПолеПользовательПрокси" id="157">
+									<DataPath>ПользовательПрокси</DataPath>
+									<Title>
+										<v8:item>
+											<v8:lang>ru</v8:lang>
+											<v8:content>Пользователь</v8:content>
+										</v8:item>
+									</Title>
+									<Width>15</Width>
+									<HorizontalStretch>false</HorizontalStretch>
+									<InputHint>
+										<v8:item>
+											<v8:lang>ru</v8:lang>
+											<v8:content>без авторизации</v8:content>
+										</v8:item>
+									</InputHint>
+									<ContextMenu name="ПолеПользовательПроксиКонтекстноеМеню" id="158"/>
+									<ExtendedTooltip name="ПолеПользовательПроксиРасширеннаяПодсказка" id="159"/>
+								</InputField>
+								<InputField name="ПолеПарольПрокси" id="160">
+									<DataPath>ПарольПрокси</DataPath>
+									<Title>
+										<v8:item>
+											<v8:lang>ru</v8:lang>
+											<v8:content>Пароль</v8:content>
+										</v8:item>
+									</Title>
+									<Width>15</Width>
+									<HorizontalStretch>false</HorizontalStretch>
+									<PasswordMode>true</PasswordMode>
+									<ContextMenu name="ПолеПарольПроксиКонтекстноеМеню" id="161"/>
+									<ExtendedTooltip name="ПолеПарольПроксиРасширеннаяПодсказка" id="162"/>
+								</InputField>
+							</ChildItems>
+						</UsualGroup>
+					</ChildItems>
+				</UsualGroup>
+				<UsualGroup name="ГруппаПроверкаМодели" id="37">
+					<Representation>None</Representation>
+					<ShowTitle>false</ShowTitle>
+					<ExtendedTooltip name="ГруппаПроверкаМоделиРасширеннаяПодсказка" id="38"/>
+					<ChildItems>
+						<InputField name="ПолеПодключениеДляПроверки" id="39">
+							<DataPath>ПодключениеДляПроверки</DataPath>
+							<Title>
+								<v8:item>
+									<v8:lang>ru</v8:lang>
+									<v8:content>Проверить подключение</v8:content>
+								</v8:item>
+							</Title>
+							<Width>30</Width>
+							<ContextMenu name="ПолеПодключениеДляПроверкиКонтекстноеМеню" id="40"/>
+							<ExtendedTooltip name="ПолеПодключениеДляПроверкиРасширеннаяПодсказка" id="41"/>
+							<Events>
+								<Event name="OnChange">ПодключениеДляПроверкиПриИзменении</Event>
+							</Events>
+						</InputField>
+						<Button name="КнопкаПроверитьМодель" id="42">
+							<Type>Hyperlink</Type>
+							<CommandName>Form.Command.ПроверитьМодель</CommandName>
+							<ExtendedTooltip name="КнопкаПроверитьМодельРасширеннаяПодсказка" id="43"/>
+						</Button>
+						<LabelField name="ПолеСостояниеПроверкиМодели" id="44">
+							<DataPath>СостояниеПроверкиМодели</DataPath>
+							<TitleLocation>None</TitleLocation>
+							<AutoMaxWidth>false</AutoMaxWidth>
+							<HorizontalStretch>true</HorizontalStretch>
+							<ContextMenu name="ПолеСостояниеПроверкиМоделиКонтекстноеМеню" id="45"/>
+							<ExtendedTooltip name="ПолеСостояниеПроверкиМоделиРасширеннаяПодсказка" id="46"/>
+						</LabelField>
+					</ChildItems>
+				</UsualGroup>
+			</ChildItems>
+		</UsualGroup>
+		<UsualGroup name="ГруппаОграничения" id="47">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Ограничения и хранение</v8:content>
+				</v8:item>
+			</Title>
+			<Group>Vertical</Group>
+			<Behavior>Collapsible</Behavior>
+			<ExtendedTooltip name="ГруппаОграниченияРасширеннаяПодсказка" id="48"/>
+			<ChildItems>
+				<InputField name="ПолеЛимитХодов" id="49">
+					<DataPath>ЛимитХодов</DataPath>
+					<Title>
+						<v8:item>
+							<v8:lang>ru</v8:lang>
+							<v8:content>Вопросов в день на пользователя</v8:content>
+						</v8:item>
+					</Title>
+					<ToolTipRepresentation>ShowBottom</ToolTipRepresentation>
+					<Width>8</Width>
+					<ContextMenu name="ПолеЛимитХодовКонтекстноеМеню" id="50"/>
+					<ExtendedTooltip name="ПолеЛимитХодовРасширеннаяПодсказка" id="51">
+						<Title formatted="false">
+							<v8:item>
+								<v8:lang>ru</v8:lang>
+								<v8:content>0 — без ограничения.</v8:content>
+							</v8:item>
+						</Title>
+					</ExtendedTooltip>
+				</InputField>
+				<InputField name="ПолеМаксимумОдновременныхХодов" id="52">
+					<DataPath>МаксимумОдновременныхХодов</DataPath>
+					<Title>
+						<v8:item>
+							<v8:lang>ru</v8:lang>
+							<v8:content>Одновременных ответов на базу</v8:content>
+						</v8:item>
+					</Title>
+					<ToolTipRepresentation>ShowBottom</ToolTipRepresentation>
+					<Width>8</Width>
+					<ContextMenu name="ПолеМаксимумОдновременныхХодовКонтекстноеМеню" id="53"/>
+					<ExtendedTooltip name="ПолеМаксимумОдновременныхХодовРасширеннаяПодсказка" id="54">
+						<Title formatted="false">
+							<v8:item>
+								<v8:lang>ru</v8:lang>
+								<v8:content>0 — без ограничения.</v8:content>
+							</v8:item>
+						</Title>
+					</ExtendedTooltip>
+				</InputField>
+				<InputField name="ПолеСрокХраненияДней" id="55">
+					<DataPath>СрокХраненияДней</DataPath>
+					<Title>
+						<v8:item>
+							<v8:lang>ru</v8:lang>
+							<v8:content>Хранить диалоги и журнал, дней</v8:content>
+						</v8:item>
+					</Title>
+					<ToolTipRepresentation>ShowBottom</ToolTipRepresentation>
+					<Width>8</Width>
+					<ContextMenu name="ПолеСрокХраненияДнейКонтекстноеМеню" id="56"/>
+					<ExtendedTooltip name="ПолеСрокХраненияДнейРасширеннаяПодсказка" id="57">
+						<Title formatted="false">
+							<v8:item>
+								<v8:lang>ru</v8:lang>
+								<v8:content>0 — хранить всегда.</v8:content>
+							</v8:item>
+						</Title>
+					</ExtendedTooltip>
+				</InputField>
+				<CheckBoxField name="ПолеРазрешитьФайлы" id="163">
+					<DataPath>РазрешитьФайлы</DataPath>
+					<Title>
+						<v8:item>
+							<v8:lang>ru</v8:lang>
+							<v8:content>Разрешить файлы в вопросах</v8:content>
+						</v8:item>
+					</Title>
+					<TitleLocation>Right</TitleLocation>
+					<ToolTip>
+						<v8:item>
+							<v8:lang>ru</v8:lang>
+							<v8:content>Файлы с компьютера и присоединённые файлы из базы. Текст файлов маскируется как текст вопроса; PDF и изображения не проверяются на персональные данные.</v8:content>
+						</v8:item>
+					</ToolTip>
+					<ToolTipRepresentation>ShowBottom</ToolTipRepresentation>
+					<ContextMenu name="ПолеРазрешитьФайлыКонтекстноеМеню" id="164"/>
+					<ExtendedTooltip name="ПолеРазрешитьФайлыРасширеннаяПодсказка" id="165"/>
+				</CheckBoxField>
+				<CheckBoxField name="ПолеРазрешитьИзображения" id="58">
+					<DataPath>РазрешитьИзображения</DataPath>
+					<Title>
+						<v8:item>
+							<v8:lang>ru</v8:lang>
+							<v8:content>Разрешить скриншоты в вопросах</v8:content>
+						</v8:item>
+					</Title>
+					<TitleLocation>Right</TitleLocation>
+					<ToolTipRepresentation>ShowBottom</ToolTipRepresentation>
+					<CheckBoxType>Auto</CheckBoxType>
+					<ContextMenu name="ПолеРазрешитьИзображенияКонтекстноеМеню" id="59"/>
+					<ExtendedTooltip name="ПолеРазрешитьИзображенияРасширеннаяПодсказка" id="60">
+						<Title formatted="false">
+							<v8:item>
+								<v8:lang>ru</v8:lang>
+								<v8:content>Скриншоты не проверяются на персональные данные.</v8:content>
+							</v8:item>
+						</Title>
+					</ExtendedTooltip>
+				</CheckBoxField>
+				<UsualGroup name="ГруппаИстория" id="61">
+					<Representation>None</Representation>
+					<ShowTitle>false</ShowTitle>
+					<ExtendedTooltip name="ГруппаИсторияРасширеннаяПодсказка" id="62"/>
+					<ChildItems>
+						<Button name="КнопкаДиалоги" id="63">
+							<Type>Hyperlink</Type>
+							<CommandName>Form.Command.Диалоги</CommandName>
+							<ExtendedTooltip name="КнопкаДиалогиРасширеннаяПодсказка" id="64"/>
+						</Button>
+						<Button name="КнопкаЖурнал" id="65">
+							<Type>Hyperlink</Type>
+							<CommandName>Form.Command.Журнал</CommandName>
+							<ExtendedTooltip name="КнопкаЖурналРасширеннаяПодсказка" id="66"/>
+						</Button>
+					</ChildItems>
+				</UsualGroup>
+			</ChildItems>
+		</UsualGroup>
+		<UsualGroup name="ГруппаДанные" id="67">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Данные и политики</v8:content>
+				</v8:item>
+			</Title>
+			<Group>Vertical</Group>
+			<Behavior>Collapsible</Behavior>
+			<Collapsed>true</Collapsed>
+			<ExtendedTooltip name="ГруппаДанныеРасширеннаяПодсказка" id="68"/>
+			<ChildItems>
+				<CheckBoxField name="ПолеОбщийМостОтчетов" id="69">
+					<DataPath>ОбщийМостОтчетов</DataPath>
+					<Title>
+						<v8:item>
+							<v8:lang>ru</v8:lang>
+							<v8:content>Общий мост отчётов</v8:content>
+						</v8:item>
+					</Title>
+					<TitleLocation>Right</TitleLocation>
+					<ToolTipRepresentation>ShowBottom</ToolTipRepresentation>
+					<CheckBoxType>Auto</CheckBoxType>
+					<ContextMenu name="ПолеОбщийМостОтчетовКонтекстноеМеню" id="70"/>
+					<ExtendedTooltip name="ПолеОбщийМостОтчетовРасширеннаяПодсказка" id="71">
+						<Title formatted="false">
+							<v8:item>
+								<v8:lang>ru</v8:lang>
+								<v8:content>Ассистент может формировать любые доступные пользователю отчёты, а не только из карточек отчётов.</v8:content>
+							</v8:item>
+						</Title>
+					</ExtendedTooltip>
+				</CheckBoxField>
+				<CheckBoxField name="ПолеПолитикиЧерезВерсии" id="72">
+					<DataPath>ПолитикиЧерезВерсии</DataPath>
+					<Title>
+						<v8:item>
+							<v8:lang>ru</v8:lang>
+							<v8:content>Применять настройки из действующей версии политик</v8:content>
+						</v8:item>
+					</Title>
+					<TitleLocation>Right</TitleLocation>
+					<ToolTipRepresentation>ShowBottom</ToolTipRepresentation>
+					<CheckBoxType>Auto</CheckBoxType>
+					<ContextMenu name="ПолеПолитикиЧерезВерсииКонтекстноеМеню" id="73"/>
+					<ExtendedTooltip name="ПолеПолитикиЧерезВерсииРасширеннаяПодсказка" id="74">
+						<Title formatted="false">
+							<v8:item>
+								<v8:lang>ru</v8:lang>
+								<v8:content>Профили и классификация берутся из действующей версии политик; ослабления подтверждает аудитор.</v8:content>
+							</v8:item>
+						</Title>
+					</ExtendedTooltip>
+				</CheckBoxField>
+				<UsualGroup name="ГруппаПолитики" id="75">
+					<Representation>None</Representation>
+					<ShowTitle>false</ShowTitle>
+					<ExtendedTooltip name="ГруппаПолитикиРасширеннаяПодсказка" id="76"/>
+					<ChildItems>
+						<Button name="КнопкаКлассификация" id="77">
+							<Type>Hyperlink</Type>
+							<CommandName>Form.Command.КлассификацияДанных</CommandName>
+							<ExtendedTooltip name="КнопкаКлассификацияРасширеннаяПодсказка" id="78"/>
+						</Button>
+						<Button name="КнопкаВерсииПолитик" id="79">
+							<Type>Hyperlink</Type>
+							<CommandName>Form.Command.ВерсииПолитик</CommandName>
+							<ExtendedTooltip name="КнопкаВерсииПолитикРасширеннаяПодсказка" id="80"/>
+						</Button>
+					</ChildItems>
+				</UsualGroup>
+				<UsualGroup name="ГруппаЗнания" id="83">
+					<Representation>None</Representation>
+					<ShowTitle>false</ShowTitle>
+					<ExtendedTooltip name="ГруппаЗнанияРасширеннаяПодсказка" id="84"/>
+					<ChildItems>
+						<Button name="КнопкаГлоссарий" id="85">
+							<Type>Hyperlink</Type>
+							<CommandName>Form.Command.Глоссарий</CommandName>
+							<ExtendedTooltip name="КнопкаГлоссарийРасширеннаяПодсказка" id="86"/>
+						</Button>
+						<Button name="КнопкаКарточкиОтчетов" id="87">
+							<Type>Hyperlink</Type>
+							<CommandName>Form.Command.КарточкиОтчетов</CommandName>
+							<ExtendedTooltip name="КнопкаКарточкиОтчетовРасширеннаяПодсказка" id="88"/>
+						</Button>
+						<Button name="КнопкаИнструменты" id="89">
+							<Type>Hyperlink</Type>
+							<CommandName>Form.Command.ДополнительныеИнструменты</CommandName>
+							<ExtendedTooltip name="КнопкаИнструментыРасширеннаяПодсказка" id="90"/>
+						</Button>
+						<Button name="КнопкаКаталог" id="91">
+							<Type>Hyperlink</Type>
+							<CommandName>Form.Command.ПерестроитьКаталог</CommandName>
+							<ExtendedTooltip name="КнопкаКаталогРасширеннаяПодсказка" id="92"/>
+						</Button>
+					</ChildItems>
+				</UsualGroup>
+			</ChildItems>
+		</UsualGroup>
+		<UsualGroup name="ГруппаКод" id="93">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Исходный код и формы</v8:content>
+				</v8:item>
+			</Title>
+			<Group>Vertical</Group>
+			<Behavior>Collapsible</Behavior>
+			<Collapsed>true</Collapsed>
+			<ExtendedTooltip name="ГруппаКодРасширеннаяПодсказка" id="94"/>
+			<ChildItems>
+				<LabelDecoration name="ДекорацияКод" id="95">
+					<AutoMaxWidth>false</AutoMaxWidth>
+					<HorizontalStretch>true</HorizontalStretch>
+					<TextColor>style:ПоясняющийТекст</TextColor>
+					<Title formatted="false">
+						<v8:item>
+							<v8:lang>ru</v8:lang>
+							<v8:content>Код конфигурации ищет внешний сервис rlm-tools-bsl. В базе код не хранится; сервис должен быть доступен с сервера 1С.</v8:content>
+						</v8:item>
+					</Title>
+					<ContextMenu name="ДекорацияКодКонтекстноеМеню" id="96"/>
+					<ExtendedTooltip name="ДекорацияКодРасширеннаяПодсказка" id="97"/>
+				</LabelDecoration>
+				<InputField name="ПолеКаталогИсходников" id="98">
+					<DataPath>КаталогИсходников</DataPath>
+					<Title>
+						<v8:item>
+							<v8:lang>ru</v8:lang>
+							<v8:content>Проект rlm-tools-bsl</v8:content>
+						</v8:item>
+					</Title>
+					<Width>40</Width>
+					<InputHint>
+						<v8:item>
+							<v8:lang>ru</v8:lang>
+							<v8:content>AT или E:\Bases\AT\src</v8:content>
+						</v8:item>
+					</InputHint>
+					<ContextMenu name="ПолеКаталогИсходниковКонтекстноеМеню" id="99"/>
+					<ExtendedTooltip name="ПолеКаталогИсходниковРасширеннаяПодсказка" id="100"/>
+				</InputField>
+				<InputField name="ПолеАдресRLM" id="101">
+					<DataPath>АдресRLM</DataPath>
+					<Title>
+						<v8:item>
+							<v8:lang>ru</v8:lang>
+							<v8:content>Адрес rlm-tools-bsl</v8:content>
+						</v8:item>
+					</Title>
+					<Width>40</Width>
+					<ContextMenu name="ПолеАдресRLMКонтекстноеМеню" id="102"/>
+					<ExtendedTooltip name="ПолеАдресRLMРасширеннаяПодсказка" id="103"/>
+				</InputField>
+				<UsualGroup name="ГруппаПроверкаRLM" id="104">
+					<Representation>None</Representation>
+					<ShowTitle>false</ShowTitle>
+					<ExtendedTooltip name="ГруппаПроверкаRLMРасширеннаяПодсказка" id="105"/>
+					<ChildItems>
+						<Button name="КнопкаПроверитьПодключение" id="106">
+							<Type>Hyperlink</Type>
+							<CommandName>Form.Command.ПроверитьПодключение</CommandName>
+							<ExtendedTooltip name="КнопкаПроверитьПодключениеРасширеннаяПодсказка" id="107"/>
+						</Button>
+						<Button name="КнопкаТестовыйЗапросRLM" id="145">
+							<Type>Hyperlink</Type>
+							<CommandName>Form.Command.ТестовыйЗапросRLM</CommandName>
+							<ExtendedTooltip name="КнопкаТестовыйЗапросRLMРасширеннаяПодсказка" id="146"/>
+						</Button>
+						<LabelField name="ПолеСостояниеИндекса" id="108">
+							<DataPath>СостояниеИндекса</DataPath>
+							<TitleLocation>None</TitleLocation>
+							<AutoMaxWidth>false</AutoMaxWidth>
+							<HorizontalStretch>true</HorizontalStretch>
+							<ContextMenu name="ПолеСостояниеИндексаКонтекстноеМеню" id="109"/>
+							<ExtendedTooltip name="ПолеСостояниеИндексаРасширеннаяПодсказка" id="110"/>
+						</LabelField>
+					</ChildItems>
+				</UsualGroup>
+			</ChildItems>
+		</UsualGroup>
+		<UsualGroup name="ГруппаВнешнийДоступ" id="124">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Внешний доступ (HTTP API)</v8:content>
+				</v8:item>
+			</Title>
+			<Group>Vertical</Group>
+			<Behavior>Collapsible</Behavior>
+			<Collapsed>true</Collapsed>
+			<ExtendedTooltip name="ГруппаВнешнийДоступРасширеннаяПодсказка" id="125"/>
+			<ChildItems>
+				<LabelDecoration name="ДекорацияВнешнийДоступ" id="126">
+					<AutoMaxWidth>false</AutoMaxWidth>
+					<HorizontalStretch>true</HorizontalStretch>
+					<TextColor>style:ПоясняющийТекст</TextColor>
+					<Title formatted="false">
+						<v8:item>
+							<v8:lang>ru</v8:lang>
+							<v8:content>HTTP-сервис /hs/iia с JWT. Токены выпускают пользователи с ролью «ИИ-ассистент: внешний доступ к инструментам».</v8:content>
+						</v8:item>
+					</Title>
+					<ContextMenu name="ДекорацияВнешнийДоступКонтекстноеМеню" id="127"/>
+					<ExtendedTooltip name="ДекорацияВнешнийДоступРасширеннаяПодсказка" id="128"/>
+				</LabelDecoration>
+				<InputField name="ПолеДовериеВнешнегоКанала" id="129">
+					<DataPath>ДовериеВнешнегоКанала</DataPath>
+					<Title>
+						<v8:item>
+							<v8:lang>ru</v8:lang>
+							<v8:content>Доверие внешнего канала</v8:content>
+						</v8:item>
+					</Title>
+					<ToolTipRepresentation>ShowBottom</ToolTipRepresentation>
+					<Width>30</Width>
+					<ContextMenu name="ПолеДовериеВнешнегоКаналаКонтекстноеМеню" id="130"/>
+					<ExtendedTooltip name="ПолеДовериеВнешнегоКаналаРасширеннаяПодсказка" id="131">
+						<Title formatted="false">
+							<v8:item>
+								<v8:lang>ru</v8:lang>
+								<v8:content>Кому уходят ответы HTTP-сервиса: Т1 получает данные К0–К4, Т2 — К0–К2, Т3 (если пусто) — только К0–К1. Инструмент с данными выше доверия канала отвечает отказом.</v8:content>
+							</v8:item>
+						</Title>
+					</ExtendedTooltip>
+				</InputField>
+				<InputField name="ПолеКлючПодписиJWT" id="132">
+					<DataPath>КлючПодписиJWT</DataPath>
+					<Title>
+						<v8:item>
+							<v8:lang>ru</v8:lang>
+							<v8:content>Ключ подписи JWT (PEM)</v8:content>
+						</v8:item>
+					</Title>
+					<AutoMaxWidth>false</AutoMaxWidth>
+					<Height>3</Height>
+					<HorizontalStretch>true</HorizontalStretch>
+					<VerticalStretch>false</VerticalStretch>
+					<MultiLine>true</MultiLine>
+					<InputHint>
+						<v8:item>
+							<v8:lang>ru</v8:lang>
+							<v8:content>пусто — не менять</v8:content>
+						</v8:item>
+					</InputHint>
+					<ContextMenu name="ПолеКлючПодписиJWTКонтекстноеМеню" id="133"/>
+					<ExtendedTooltip name="ПолеКлючПодписиJWTРасширеннаяПодсказка" id="134"/>
+				</InputField>
+				<LabelField name="ПолеСостояниеКлючаJWT" id="135">
+					<DataPath>СостояниеКлючаJWT</DataPath>
+					<Title>
+						<v8:item>
+							<v8:lang>ru</v8:lang>
+							<v8:content>Сохранённый ключ</v8:content>
+						</v8:item>
+					</Title>
+					<ContextMenu name="ПолеСостояниеКлючаJWTКонтекстноеМеню" id="136"/>
+					<ExtendedTooltip name="ПолеСостояниеКлючаJWTРасширеннаяПодсказка" id="137"/>
+				</LabelField>
+			</ChildItems>
+		</UsualGroup>
+		<UsualGroup name="ГруппаКачество" id="138">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Качество ответов</v8:content>
+				</v8:item>
+			</Title>
+			<Group>Vertical</Group>
+			<Behavior>Collapsible</Behavior>
+			<Collapsed>true</Collapsed>
+			<ExtendedTooltip name="ГруппаКачествоРасширеннаяПодсказка" id="139"/>
+			<ChildItems>
+				<InputField name="ПолеОписаниеКачества" id="140">
+					<DataPath>ОписаниеКачества</DataPath>
+					<ReadOnly>true</ReadOnly>
+					<TitleLocation>None</TitleLocation>
+					<AutoMaxWidth>false</AutoMaxWidth>
+					<Height>3</Height>
+					<HorizontalStretch>true</HorizontalStretch>
+					<VerticalStretch>false</VerticalStretch>
+					<MultiLine>true</MultiLine>
+					<ContextMenu name="ПолеОписаниеКачестваКонтекстноеМеню" id="141"/>
+					<ExtendedTooltip name="ПолеОписаниеКачестваРасширеннаяПодсказка" id="142"/>
+				</InputField>
+				<Button name="КнопкаОценка" id="143">
+					<Type>Hyperlink</Type>
+					<CommandName>Form.Command.ПрогнатьЭталон</CommandName>
+					<ToolTipRepresentation>ShowBottom</ToolTipRepresentation>
+					<ExtendedTooltip name="КнопкаОценкаРасширеннаяПодсказка" id="144">
+						<Title formatted="false">
+							<v8:item>
+								<v8:lang>ru</v8:lang>
+								<v8:content>Эталонные вопросы отправляются настоящей модели; прогон занимает несколько минут.</v8:content>
+							</v8:item>
+						</Title>
+					</ExtendedTooltip>
+				</Button>
+			</ChildItems>
+		</UsualGroup>
+	</ChildItems>
+	<Attributes>
+		<Attribute name="Использовать" id="145">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Использовать</v8:content>
+				</v8:item>
+			</Title>
+			<Type>
+				<v8:Type>xs:boolean</v8:Type>
+			</Type>
+		</Attribute>
+		<Attribute name="ЛимитХодов" id="146">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Лимит ходов</v8:content>
+				</v8:item>
+			</Title>
+			<Type>
+				<v8:Type>xs:decimal</v8:Type>
+				<v8:NumberQualifiers>
+					<v8:Digits>5</v8:Digits>
+					<v8:FractionDigits>0</v8:FractionDigits>
+					<v8:AllowedSign>Any</v8:AllowedSign>
+				</v8:NumberQualifiers>
+			</Type>
+		</Attribute>
+		<Attribute name="РазрешитьИзображения" id="147">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Разрешить изображения</v8:content>
+				</v8:item>
+			</Title>
+			<Type>
+				<v8:Type>xs:boolean</v8:Type>
+			</Type>
+		</Attribute>
+		<Attribute name="ПрофильПоУмолчанию" id="148">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Профиль по умолчанию</v8:content>
+				</v8:item>
+			</Title>
+			<Type>
+				<v8:Type>cfg:CatalogRef.ИИА_ПрофилиДоступа</v8:Type>
+			</Type>
+		</Attribute>
+		<Attribute name="КаталогИсходников" id="149">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Каталог исходников</v8:content>
+				</v8:item>
+			</Title>
+			<Type>
+				<v8:Type>xs:string</v8:Type>
+				<v8:StringQualifiers>
+					<v8:Length>1000</v8:Length>
+					<v8:AllowedLength>Variable</v8:AllowedLength>
+				</v8:StringQualifiers>
+			</Type>
+		</Attribute>
+		<Attribute name="СостояниеИндекса" id="150">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Состояние индекса</v8:content>
+				</v8:item>
+			</Title>
+			<Type>
+				<v8:Type>xs:string</v8:Type>
+				<v8:StringQualifiers>
+					<v8:Length>0</v8:Length>
+					<v8:AllowedLength>Variable</v8:AllowedLength>
+				</v8:StringQualifiers>
+			</Type>
+		</Attribute>
+		<Attribute name="СрокХраненияДней" id="151">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Срок хранения дней</v8:content>
+				</v8:item>
+			</Title>
+			<Type>
+				<v8:Type>xs:decimal</v8:Type>
+				<v8:NumberQualifiers>
+					<v8:Digits>4</v8:Digits>
+					<v8:FractionDigits>0</v8:FractionDigits>
+					<v8:AllowedSign>Any</v8:AllowedSign>
+				</v8:NumberQualifiers>
+			</Type>
+		</Attribute>
+		<Attribute name="ОбщийМостОтчетов" id="152">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Общий мост отчетов</v8:content>
+				</v8:item>
+			</Title>
+			<Type>
+				<v8:Type>xs:boolean</v8:Type>
+			</Type>
+		</Attribute>
+		<Attribute name="ПолитикиЧерезВерсии" id="153">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Политики через версии</v8:content>
+				</v8:item>
+			</Title>
+			<Type>
+				<v8:Type>xs:boolean</v8:Type>
+			</Type>
+		</Attribute>
+		<Attribute name="ДовериеВнешнегоКанала" id="154">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Доверие внешнего канала</v8:content>
+				</v8:item>
+			</Title>
+			<Type>
+				<v8:Type>cfg:EnumRef.ИИА_УровниДоверия</v8:Type>
+			</Type>
+		</Attribute>
+		<Attribute name="КлючПодписиJWT" id="155">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Ключ подписи JWT</v8:content>
+				</v8:item>
+			</Title>
+			<Type>
+				<v8:Type>xs:string</v8:Type>
+				<v8:StringQualifiers>
+					<v8:Length>0</v8:Length>
+					<v8:AllowedLength>Variable</v8:AllowedLength>
+				</v8:StringQualifiers>
+			</Type>
+		</Attribute>
+		<Attribute name="СостояниеКлючаJWT" id="156">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Состояние ключа JWT</v8:content>
+				</v8:item>
+			</Title>
+			<Type>
+				<v8:Type>xs:string</v8:Type>
+				<v8:StringQualifiers>
+					<v8:Length>0</v8:Length>
+					<v8:AllowedLength>Variable</v8:AllowedLength>
+				</v8:StringQualifiers>
+			</Type>
+		</Attribute>
+		<Attribute name="ОписаниеКачества" id="157">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Описание качества</v8:content>
+				</v8:item>
+			</Title>
+			<Type>
+				<v8:Type>xs:string</v8:Type>
+				<v8:StringQualifiers>
+					<v8:Length>0</v8:Length>
+					<v8:AllowedLength>Variable</v8:AllowedLength>
+				</v8:StringQualifiers>
+			</Type>
+		</Attribute>
+		<Attribute name="МаксимумОдновременныхХодов" id="158">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Максимум одновременных ходов</v8:content>
+				</v8:item>
+			</Title>
+			<Type>
+				<v8:Type>xs:decimal</v8:Type>
+				<v8:NumberQualifiers>
+					<v8:Digits>4</v8:Digits>
+					<v8:FractionDigits>0</v8:FractionDigits>
+					<v8:AllowedSign>Any</v8:AllowedSign>
+				</v8:NumberQualifiers>
+			</Type>
+		</Attribute>
+		<Attribute name="АдресRLM" id="159">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Адрес RLM</v8:content>
+				</v8:item>
+			</Title>
+			<Type>
+				<v8:Type>xs:string</v8:Type>
+				<v8:StringQualifiers>
+					<v8:Length>300</v8:Length>
+					<v8:AllowedLength>Variable</v8:AllowedLength>
+				</v8:StringQualifiers>
+			</Type>
+		</Attribute>
+		<Attribute name="ПодключениеДляПроверки" id="160">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Подключение для проверки</v8:content>
+				</v8:item>
+			</Title>
+			<Type>
+				<v8:Type>cfg:CatalogRef.ИИА_ПодключенияМоделей</v8:Type>
+			</Type>
+		</Attribute>
+		<Attribute name="ПользовательДляПроверки" id="161">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Пользователь для проверки</v8:content>
+				</v8:item>
+			</Title>
+			<Type>
+				<v8:Type>cfg:CatalogRef.Пользователи</v8:Type>
+			</Type>
+		</Attribute>
+		<Attribute name="СостояниеПроверкиМодели" id="162">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Состояние проверки модели</v8:content>
+				</v8:item>
+			</Title>
+			<Type>
+				<v8:Type>xs:string</v8:Type>
+				<v8:StringQualifiers>
+					<v8:Length>0</v8:Length>
+					<v8:AllowedLength>Variable</v8:AllowedLength>
+				</v8:StringQualifiers>
+			</Type>
+		</Attribute>
+		<Attribute name="ДиагностикаДоступа" id="163">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Диагностика доступа</v8:content>
+				</v8:item>
+			</Title>
+			<Type>
+				<v8:Type>xs:string</v8:Type>
+				<v8:StringQualifiers>
+					<v8:Length>0</v8:Length>
+					<v8:AllowedLength>Variable</v8:AllowedLength>
+				</v8:StringQualifiers>
+			</Type>
+		</Attribute>
+		<Attribute name="РежимПрокси" id="164">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Прокси для моделей</v8:content>
+				</v8:item>
+			</Title>
+			<Type>
+				<v8:Type>cfg:EnumRef.ИИА_РежимыПрокси</v8:Type>
+			</Type>
+		</Attribute>
+		<Attribute name="АдресПрокси" id="165">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Адрес прокси</v8:content>
+				</v8:item>
+			</Title>
+			<Type>
+				<v8:Type>xs:string</v8:Type>
+				<v8:StringQualifiers>
+					<v8:Length>255</v8:Length>
+					<v8:AllowedLength>Variable</v8:AllowedLength>
+				</v8:StringQualifiers>
+			</Type>
+		</Attribute>
+		<Attribute name="ПользовательПрокси" id="166">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Пользователь прокси</v8:content>
+				</v8:item>
+			</Title>
+			<Type>
+				<v8:Type>xs:string</v8:Type>
+				<v8:StringQualifiers>
+					<v8:Length>100</v8:Length>
+					<v8:AllowedLength>Variable</v8:AllowedLength>
+				</v8:StringQualifiers>
+			</Type>
+		</Attribute>
+		<Attribute name="ПарольПрокси" id="167">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Пароль прокси</v8:content>
+				</v8:item>
+			</Title>
+			<Type>
+				<v8:Type>xs:string</v8:Type>
+				<v8:StringQualifiers>
+					<v8:Length>0</v8:Length>
+					<v8:AllowedLength>Variable</v8:AllowedLength>
+				</v8:StringQualifiers>
+			</Type>
+		</Attribute>
+		<Attribute name="ПарольПроксиСохранен" id="168">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Пароль прокси сохранён</v8:content>
+				</v8:item>
+			</Title>
+			<Type>
+				<v8:Type>xs:boolean</v8:Type>
+			</Type>
+		</Attribute>
+		<Attribute name="РазрешитьФайлы" id="169">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Разрешить файлы</v8:content>
+				</v8:item>
+			</Title>
+			<Type>
+				<v8:Type>xs:boolean</v8:Type>
+			</Type>
+		</Attribute>
+	</Attributes>
+	<Commands>
+		<Command name="ЗаписатьИЗакрыть" id="167">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Записать и закрыть</v8:content>
+				</v8:item>
+			</Title>
+			<Action>ЗаписатьИЗакрыть</Action>
+		</Command>
+		<Command name="ОткрытьЧат" id="168">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Записать и открыть чат</v8:content>
+				</v8:item>
+			</Title>
+			<Action>ОткрытьЧат</Action>
+		</Command>
+		<Command name="ПодключенияМоделей" id="170">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Подключения к моделям</v8:content>
+				</v8:item>
+			</Title>
+			<Action>ПодключенияМоделей</Action>
+		</Command>
+		<Command name="ПрофилиДоступа" id="171">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Профили доступа</v8:content>
+				</v8:item>
+			</Title>
+			<Action>ПрофилиДоступа</Action>
+		</Command>
+		<Command name="Диалоги" id="172">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Диалоги</v8:content>
+				</v8:item>
+			</Title>
+			<Action>Диалоги</Action>
+		</Command>
+		<Command name="Журнал" id="173">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Журнал вызовов</v8:content>
+				</v8:item>
+			</Title>
+			<Action>Журнал</Action>
+		</Command>
+		<Command name="КлассификацияДанных" id="174">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Доступ к данным</v8:content>
+				</v8:item>
+			</Title>
+			<ToolTip>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Что и почему получает модель: классы объектов, данные, закрытые всегда (персональные, кадры, зарплата), счета бухучёта и уровни доверия моделей</v8:content>
+				</v8:item>
+			</ToolTip>
+			<Action>КлассификацияДанных</Action>
+		</Command>
+		<Command name="ВерсииПолитик" id="175">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Версии политик</v8:content>
+				</v8:item>
+			</Title>
+			<Action>ВерсииПолитик</Action>
+		</Command>
+		<Command name="Глоссарий" id="176">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Глоссарий</v8:content>
+				</v8:item>
+			</Title>
+			<Action>Глоссарий</Action>
+		</Command>
+		<Command name="КарточкиОтчетов" id="177">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Карточки отчётов</v8:content>
+				</v8:item>
+			</Title>
+			<Action>КарточкиОтчетов</Action>
+		</Command>
+		<Command name="ДополнительныеИнструменты" id="178">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Дополнительные инструменты</v8:content>
+				</v8:item>
+			</Title>
+			<Action>ДополнительныеИнструменты</Action>
+		</Command>
+		<Command name="ПерестроитьКаталог" id="179">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Перестроить каталог метаданных</v8:content>
+				</v8:item>
+			</Title>
+			<Action>ПерестроитьКаталог</Action>
+		</Command>
+		<Command name="ПрогнатьЭталон" id="180">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Прогнать эталонные вопросы</v8:content>
+				</v8:item>
+			</Title>
+			<Action>ПрогнатьЭталон</Action>
+		</Command>
+		<Command name="ПроверитьПодключение" id="181">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Проверить rlm-tools-bsl</v8:content>
+				</v8:item>
+			</Title>
+			<Action>ПроверитьПодключение</Action>
+		</Command>
+		<Command name="ПроверитьМодель" id="182">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Проверить</v8:content>
+				</v8:item>
+			</Title>
+			<ToolTip>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Отправляет провайдеру тестовый запрос без данных базы. Запрос может быть платным.</v8:content>
+				</v8:item>
+			</ToolTip>
+			<Action>ПроверитьМодель</Action>
+		</Command>
+		<Command name="ПроверитьДоступ" id="183">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Проверить</v8:content>
+				</v8:item>
+			</Title>
+			<Action>ПроверитьДоступ</Action>
+		</Command>
+		<Command name="ТестовыйЗапросRLM" id="185">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Тестовый запрос</v8:content>
+				</v8:item>
+			</Title>
+			<ToolTip>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Отправить в rlm-tools-bsl контрольный поиск (общий модуль ОбщегоНазначения и метод ЗначениеВJSON), сверить результат и закрыть сессию.</v8:content>
+				</v8:item>
+			</ToolTip>
+			<Action>ТестовыйЗапросRLM</Action>
+		</Command>
+	</Commands>
+</Form>

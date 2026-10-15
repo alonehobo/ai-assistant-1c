@@ -1,0 +1,411 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<Form xmlns="http://v8.1c.ru/8.3/xcf/logform" xmlns:app="http://v8.1c.ru/8.2/managed-application/core" xmlns:cfg="http://v8.1c.ru/8.1/data/enterprise/current-config" xmlns:dcscor="http://v8.1c.ru/8.1/data-composition-system/core" xmlns:dcssch="http://v8.1c.ru/8.1/data-composition-system/schema" xmlns:dcsset="http://v8.1c.ru/8.1/data-composition-system/settings" xmlns:ent="http://v8.1c.ru/8.1/data/enterprise" xmlns:lf="http://v8.1c.ru/8.2/managed-application/logform" xmlns:style="http://v8.1c.ru/8.1/data/ui/style" xmlns:sys="http://v8.1c.ru/8.1/data/ui/fonts/system" xmlns:v8="http://v8.1c.ru/8.1/data/core" xmlns:v8ui="http://v8.1c.ru/8.1/data/ui" xmlns:web="http://v8.1c.ru/8.1/data/ui/colors/web" xmlns:win="http://v8.1c.ru/8.1/data/ui/colors/windows" xmlns:xr="http://v8.1c.ru/8.3/xcf/readable" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="2.20">
+	<Title>
+		<v8:item>
+			<v8:lang>ru</v8:lang>
+			<v8:content>Журнал вызовов ИИ-ассистента</v8:content>
+		</v8:item>
+	</Title>
+	<AutoTitle>false</AutoTitle>
+	<AutoCommandBar name="ФормаКоманднаяПанель" id="-1">
+		<ChildItems>
+			<Button name="ФормаПерепискаДиалога" id="59">
+				<CommandName>Form.Command.ПерепискаДиалога</CommandName>
+				<ExtendedTooltip name="ФормаПерепискаДиалогаРасширеннаяПодсказка" id="60"/>
+			</Button>
+			<Button name="ФормаВесьХод" id="61">
+				<CommandName>Form.Command.ВесьХод</CommandName>
+				<ExtendedTooltip name="ФормаВесьХодРасширеннаяПодсказка" id="62"/>
+			</Button>
+		</ChildItems>
+	</AutoCommandBar>
+	<Events>
+		<Event name="OnCreateAtServer">ПриСозданииНаСервере</Event>
+	</Events>
+	<ChildItems>
+		<Table name="Список" id="1">
+			<CommandBarLocation>None</CommandBarLocation>
+			<InitialListView>Beginning</InitialListView>
+			<DataPath>Список</DataPath>
+			<RowPictureDataPath>Список.DefaultPicture</RowPictureDataPath>
+			<AutoRefresh>false</AutoRefresh>
+			<AutoRefreshPeriod>60</AutoRefreshPeriod>
+			<Period>
+				<v8:variant xsi:type="v8:StandardPeriodVariant">Custom</v8:variant>
+				<v8:startDate>0001-01-01T00:00:00</v8:startDate>
+				<v8:endDate>0001-01-01T00:00:00</v8:endDate>
+			</Period>
+			<ChoiceFoldersAndItems>Items</ChoiceFoldersAndItems>
+			<RestoreCurrentRow>false</RestoreCurrentRow>
+			<TopLevelParent xsi:nil="true"/>
+			<ShowRoot>true</ShowRoot>
+			<AllowRootChoice>false</AllowRootChoice>
+			<UpdateOnDataChange>Auto</UpdateOnDataChange>
+			<AllowGettingCurrentRowURL>true</AllowGettingCurrentRowURL>
+			<ContextMenu name="СписокКонтекстноеМеню" id="2"/>
+			<AutoCommandBar name="СписокКоманднаяПанель" id="3"/>
+			<ExtendedTooltip name="СписокРасширеннаяПодсказка" id="4"/>
+			<SearchStringAddition name="СписокСтрокаПоиска" id="5">
+				<AdditionSource>
+					<Item>Список</Item>
+					<Type>SearchStringRepresentation</Type>
+				</AdditionSource>
+				<ContextMenu name="СписокСтрокаПоискаКонтекстноеМеню" id="6"/>
+				<ExtendedTooltip name="СписокСтрокаПоискаРасширеннаяПодсказка" id="7"/>
+			</SearchStringAddition>
+			<ViewStatusAddition name="СписокСостояниеПросмотра" id="8">
+				<AdditionSource>
+					<Item>Список</Item>
+					<Type>ViewStatusRepresentation</Type>
+				</AdditionSource>
+				<ContextMenu name="СписокСостояниеПросмотраКонтекстноеМеню" id="9"/>
+				<ExtendedTooltip name="СписокСостояниеПросмотраРасширеннаяПодсказка" id="10"/>
+			</ViewStatusAddition>
+			<SearchControlAddition name="СписокУправлениеПоиском" id="11">
+				<AdditionSource>
+					<Item>Список</Item>
+					<Type>SearchControl</Type>
+				</AdditionSource>
+				<ContextMenu name="СписокУправлениеПоискомКонтекстноеМеню" id="12"/>
+				<ExtendedTooltip name="СписокУправлениеПоискомРасширеннаяПодсказка" id="13"/>
+			</SearchControlAddition>
+			<ChildItems>
+				<InputField name="Дата" id="14">
+					<DataPath>Список.Дата</DataPath>
+					<Title>
+						<v8:item>
+							<v8:lang>ru</v8:lang>
+							<v8:content>Дата</v8:content>
+						</v8:item>
+					</Title>
+					<Width>16</Width>
+					<ContextMenu name="ДатаКонтекстноеМеню" id="15"/>
+					<ExtendedTooltip name="ДатаРасширеннаяПодсказка" id="16"/>
+				</InputField>
+				<InputField name="Пользователь" id="17">
+					<DataPath>Список.Пользователь</DataPath>
+					<Title>
+						<v8:item>
+							<v8:lang>ru</v8:lang>
+							<v8:content>Пользователь</v8:content>
+						</v8:item>
+					</Title>
+					<Width>16</Width>
+					<ContextMenu name="ПользовательКонтекстноеМеню" id="18"/>
+					<ExtendedTooltip name="ПользовательРасширеннаяПодсказка" id="19"/>
+				</InputField>
+				<InputField name="Событие" id="20">
+					<DataPath>Список.Событие</DataPath>
+					<Title>
+						<v8:item>
+							<v8:lang>ru</v8:lang>
+							<v8:content>Событие</v8:content>
+						</v8:item>
+					</Title>
+					<Width>12</Width>
+					<ContextMenu name="СобытиеКонтекстноеМеню" id="21"/>
+					<ExtendedTooltip name="СобытиеРасширеннаяПодсказка" id="22"/>
+				</InputField>
+				<InputField name="Инструмент" id="23">
+					<DataPath>Список.Инструмент</DataPath>
+					<Title>
+						<v8:item>
+							<v8:lang>ru</v8:lang>
+							<v8:content>Инструмент</v8:content>
+						</v8:item>
+					</Title>
+					<Width>12</Width>
+					<ContextMenu name="ИнструментКонтекстноеМеню" id="24"/>
+					<ExtendedTooltip name="ИнструментРасширеннаяПодсказка" id="25"/>
+				</InputField>
+				<InputField name="Итог" id="26">
+					<DataPath>Список.Итог</DataPath>
+					<Title>
+						<v8:item>
+							<v8:lang>ru</v8:lang>
+							<v8:content>Итог</v8:content>
+						</v8:item>
+					</Title>
+					<Width>10</Width>
+					<ContextMenu name="ИтогКонтекстноеМеню" id="27"/>
+					<ExtendedTooltip name="ИтогРасширеннаяПодсказка" id="28"/>
+				</InputField>
+				<CheckBoxField name="Инцидент" id="29">
+					<DataPath>Список.Инцидент</DataPath>
+					<Title>
+						<v8:item>
+							<v8:lang>ru</v8:lang>
+							<v8:content>Инцидент</v8:content>
+						</v8:item>
+					</Title>
+					<TitleLocation>Right</TitleLocation>
+					<Width>5</Width>
+					<CheckBoxType>Auto</CheckBoxType>
+					<ContextMenu name="ИнцидентКонтекстноеМеню" id="30"/>
+					<ExtendedTooltip name="ИнцидентРасширеннаяПодсказка" id="31"/>
+				</CheckBoxField>
+				<InputField name="Длительность" id="32">
+					<DataPath>Список.Длительность</DataPath>
+					<Title>
+						<v8:item>
+							<v8:lang>ru</v8:lang>
+							<v8:content>Длительность, с</v8:content>
+						</v8:item>
+					</Title>
+					<Width>8</Width>
+					<ContextMenu name="ДлительностьКонтекстноеМеню" id="33"/>
+					<ExtendedTooltip name="ДлительностьРасширеннаяПодсказка" id="34"/>
+				</InputField>
+				<InputField name="Строк" id="35">
+					<DataPath>Список.Строк</DataPath>
+					<Title>
+						<v8:item>
+							<v8:lang>ru</v8:lang>
+							<v8:content>Строк</v8:content>
+						</v8:item>
+					</Title>
+					<Width>6</Width>
+					<ContextMenu name="СтрокКонтекстноеМеню" id="36"/>
+					<ExtendedTooltip name="СтрокРасширеннаяПодсказка" id="37"/>
+				</InputField>
+				<InputField name="ТокеныВход" id="38">
+					<DataPath>Список.ТокеныВход</DataPath>
+					<Title>
+						<v8:item>
+							<v8:lang>ru</v8:lang>
+							<v8:content>Токены вход</v8:content>
+						</v8:item>
+					</Title>
+					<Width>8</Width>
+					<ContextMenu name="ТокеныВходКонтекстноеМеню" id="39"/>
+					<ExtendedTooltip name="ТокеныВходРасширеннаяПодсказка" id="40"/>
+				</InputField>
+				<InputField name="ТокеныВыход" id="41">
+					<DataPath>Список.ТокеныВыход</DataPath>
+					<Title>
+						<v8:item>
+							<v8:lang>ru</v8:lang>
+							<v8:content>Токены выход</v8:content>
+						</v8:item>
+					</Title>
+					<Width>8</Width>
+					<ContextMenu name="ТокеныВыходКонтекстноеМеню" id="42"/>
+					<ExtendedTooltip name="ТокеныВыходРасширеннаяПодсказка" id="43"/>
+				</InputField>
+				<InputField name="Подключение" id="44">
+					<DataPath>Список.Подключение</DataPath>
+					<Title>
+						<v8:item>
+							<v8:lang>ru</v8:lang>
+							<v8:content>Подключение</v8:content>
+						</v8:item>
+					</Title>
+					<ContextMenu name="ПодключениеКонтекстноеМеню" id="45"/>
+					<ExtendedTooltip name="ПодключениеРасширеннаяПодсказка" id="46"/>
+				</InputField>
+				<InputField name="Диалог" id="47">
+					<DataPath>Список.Диалог</DataPath>
+					<Title>
+						<v8:item>
+							<v8:lang>ru</v8:lang>
+							<v8:content>Диалог</v8:content>
+						</v8:item>
+					</Title>
+					<ContextMenu name="ДиалогКонтекстноеМеню" id="48"/>
+					<ExtendedTooltip name="ДиалогРасширеннаяПодсказка" id="49"/>
+				</InputField>
+				<InputField name="ИдентификаторХода" id="50">
+					<DataPath>Список.ИдентификаторХода</DataPath>
+					<Visible>false</Visible>
+					<Title>
+						<v8:item>
+							<v8:lang>ru</v8:lang>
+							<v8:content>Идентификатор хода</v8:content>
+						</v8:item>
+					</Title>
+					<ContextMenu name="ИдентификаторХодаКонтекстноеМеню" id="51"/>
+					<ExtendedTooltip name="ИдентификаторХодаРасширеннаяПодсказка" id="52"/>
+				</InputField>
+				<InputField name="Аргументы" id="53">
+					<DataPath>Список.Аргументы</DataPath>
+					<Visible>false</Visible>
+					<Title>
+						<v8:item>
+							<v8:lang>ru</v8:lang>
+							<v8:content>Аргументы</v8:content>
+						</v8:item>
+					</Title>
+					<ContextMenu name="АргументыКонтекстноеМеню" id="54"/>
+					<ExtendedTooltip name="АргументыРасширеннаяПодсказка" id="55"/>
+				</InputField>
+				<InputField name="Подробности" id="56">
+					<DataPath>Список.Подробности</DataPath>
+					<Title>
+						<v8:item>
+							<v8:lang>ru</v8:lang>
+							<v8:content>Подробности</v8:content>
+						</v8:item>
+					</Title>
+					<ContextMenu name="ПодробностиКонтекстноеМеню" id="57"/>
+					<ExtendedTooltip name="ПодробностиРасширеннаяПодсказка" id="58"/>
+				</InputField>
+			</ChildItems>
+		</Table>
+	</ChildItems>
+	<Attributes>
+		<Attribute name="Список" id="59">
+			<Type>
+				<v8:Type>cfg:DynamicList</v8:Type>
+			</Type>
+			<MainAttribute>true</MainAttribute>
+			<Settings xsi:type="DynamicList">
+				<ManualQuery>true</ManualQuery>
+				<DynamicDataRead>true</DynamicDataRead>
+				<QueryText>ВЫБРАТЬ
+	ДОБАВИТЬКДАТЕ(Ж.МоментВызова, СЕКУНДА, &amp;СмещениеСекунд) КАК Дата,
+	Ж.МоментВызова КАК МоментВызова,
+	Ж.ИдентификаторЗаписи КАК ИдентификаторЗаписи,
+	Ж.Пользователь КАК Пользователь,
+	Ж.Событие КАК Событие,
+	Ж.Инструмент КАК Инструмент,
+	Ж.Итог КАК Итог,
+	Ж.Инцидент КАК Инцидент,
+	Ж.Длительность КАК Длительность,
+	Ж.Строк КАК Строк,
+	Ж.ТокеныВход КАК ТокеныВход,
+	Ж.ТокеныВыход КАК ТокеныВыход,
+	Ж.Подключение КАК Подключение,
+	Ж.Диалог КАК Диалог,
+	Ж.ИдентификаторХода КАК ИдентификаторХода,
+	Ж.Аргументы КАК Аргументы,
+	Ж.Подробности КАК Подробности
+ИЗ
+	РегистрСведений.ИИА_ЖурналВызовов КАК Ж</QueryText>
+				<Field xsi:type="dcssch:DataSetFieldField">
+					<dcssch:dataPath>Дата</dcssch:dataPath>
+					<dcssch:field>Дата</dcssch:field>
+					<dcssch:title xsi:type="v8:LocalStringType">
+						<v8:item>
+							<v8:lang>ru</v8:lang>
+							<v8:content>Дата (местное время)</v8:content>
+						</v8:item>
+					</dcssch:title>
+				</Field>
+				<Parameter>
+					<dcssch:name>СмещениеСекунд</dcssch:name>
+					<dcssch:title xsi:type="v8:LocalStringType">
+						<v8:item>
+							<v8:lang>ru</v8:lang>
+							<v8:content>Смещение секунд</v8:content>
+						</v8:item>
+					</dcssch:title>
+					<dcssch:valueType>
+						<v8:Type>xs:decimal</v8:Type>
+						<v8:NumberQualifiers>
+							<v8:Digits>10</v8:Digits>
+							<v8:FractionDigits>0</v8:FractionDigits>
+							<v8:AllowedSign>Any</v8:AllowedSign>
+						</v8:NumberQualifiers>
+					</dcssch:valueType>
+					<dcssch:value xsi:type="xs:decimal">0</dcssch:value>
+					<dcssch:useRestriction>true</dcssch:useRestriction>
+				</Parameter>
+				<MainTable>InformationRegister.ИИА_ЖурналВызовов</MainTable>
+				<ListSettings>
+					<dcsset:filter>
+						<dcsset:viewMode>Normal</dcsset:viewMode>
+						<dcsset:userSettingID>dfcece9d-5077-440b-b6b3-45a5cb4538eb</dcsset:userSettingID>
+					</dcsset:filter>
+					<dcsset:order>
+						<dcsset:item xsi:type="dcsset:OrderItemField">
+							<dcsset:field>МоментВызова</dcsset:field>
+							<dcsset:orderType>Desc</dcsset:orderType>
+						</dcsset:item>
+						<dcsset:viewMode>Normal</dcsset:viewMode>
+						<dcsset:userSettingID>88619765-ccb3-46c6-ac52-38e9c992ebd4</dcsset:userSettingID>
+					</dcsset:order>
+					<dcsset:conditionalAppearance>
+						<dcsset:item>
+							<dcsset:selection/>
+							<dcsset:filter>
+								<dcsset:item xsi:type="dcsset:FilterItemComparison">
+									<dcsset:left xsi:type="dcscor:Field">Инцидент</dcsset:left>
+									<dcsset:comparisonType>Equal</dcsset:comparisonType>
+									<dcsset:right xsi:type="xs:boolean">true</dcsset:right>
+								</dcsset:item>
+							</dcsset:filter>
+							<dcsset:appearance>
+								<dcscor:item xsi:type="dcsset:SettingsParameterValue">
+									<dcscor:parameter>ЦветФона</dcscor:parameter>
+									<dcscor:value xsi:type="v8ui:Color">#FDF1EF</dcscor:value>
+								</dcscor:item>
+							</dcsset:appearance>
+						</dcsset:item>
+						<dcsset:item>
+							<dcsset:selection/>
+							<dcsset:filter>
+								<dcsset:item xsi:type="dcsset:FilterItemGroup">
+									<dcsset:groupType>OrGroup</dcsset:groupType>
+									<dcsset:item xsi:type="dcsset:FilterItemComparison">
+										<dcsset:left xsi:type="dcscor:Field">Итог</dcsset:left>
+										<dcsset:comparisonType>Equal</dcsset:comparisonType>
+										<dcsset:right xsi:type="xs:string">ERROR</dcsset:right>
+									</dcsset:item>
+									<dcsset:item xsi:type="dcsset:FilterItemComparison">
+										<dcsset:left xsi:type="dcscor:Field">Итог</dcsset:left>
+										<dcsset:comparisonType>Like</dcsset:comparisonType>
+										<dcsset:right xsi:type="xs:string">%BLOCKED%</dcsset:right>
+									</dcsset:item>
+									<dcsset:item xsi:type="dcsset:FilterItemComparison">
+										<dcsset:left xsi:type="dcscor:Field">Итог</dcsset:left>
+										<dcsset:comparisonType>Like</dcsset:comparisonType>
+										<dcsset:right xsi:type="xs:string">%DENIED%</dcsset:right>
+									</dcsset:item>
+									<dcsset:item xsi:type="dcsset:FilterItemComparison">
+										<dcsset:left xsi:type="dcscor:Field">Итог</dcsset:left>
+										<dcsset:comparisonType>Like</dcsset:comparisonType>
+										<dcsset:right xsi:type="xs:string">%VIOLATION%</dcsset:right>
+									</dcsset:item>
+								</dcsset:item>
+							</dcsset:filter>
+							<dcsset:appearance>
+								<dcscor:item xsi:type="dcsset:SettingsParameterValue">
+									<dcscor:parameter>ЦветТекста</dcscor:parameter>
+									<dcscor:value xsi:type="v8ui:Color">#B3261E</dcscor:value>
+								</dcscor:item>
+							</dcsset:appearance>
+						</dcsset:item>
+						<dcsset:viewMode>Normal</dcsset:viewMode>
+						<dcsset:userSettingID>b75fecce-942b-4aed-abc9-e6a02e460fb3</dcsset:userSettingID>
+					</dcsset:conditionalAppearance>
+					<dcsset:itemsViewMode>Normal</dcsset:itemsViewMode>
+					<dcsset:itemsUserSettingID>911b6018-f537-43e8-a417-da56b22f9aec</dcsset:itemsUserSettingID>
+				</ListSettings>
+			</Settings>
+		</Attribute>
+	</Attributes>
+	<Commands>
+		<Command name="ПерепискаДиалога" id="1">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Переписка диалога</v8:content>
+				</v8:item>
+			</Title>
+			<Action>ПерепискаДиалога</Action>
+			<Representation>TextPicture</Representation>
+			<CurrentRowUse>Use</CurrentRowUse>
+		</Command>
+		<Command name="ВесьХод" id="2">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Все записи хода</v8:content>
+				</v8:item>
+			</Title>
+			<Action>ВесьХод</Action>
+			<Representation>TextPicture</Representation>
+			<CurrentRowUse>Use</CurrentRowUse>
+		</Command>
+	</Commands>
+</Form>

@@ -1,0 +1,273 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<Form xmlns="http://v8.1c.ru/8.3/xcf/logform" xmlns:app="http://v8.1c.ru/8.2/managed-application/core" xmlns:cfg="http://v8.1c.ru/8.1/data/enterprise/current-config" xmlns:dcscor="http://v8.1c.ru/8.1/data-composition-system/core" xmlns:dcssch="http://v8.1c.ru/8.1/data-composition-system/schema" xmlns:dcsset="http://v8.1c.ru/8.1/data-composition-system/settings" xmlns:ent="http://v8.1c.ru/8.1/data/enterprise" xmlns:lf="http://v8.1c.ru/8.2/managed-application/logform" xmlns:style="http://v8.1c.ru/8.1/data/ui/style" xmlns:sys="http://v8.1c.ru/8.1/data/ui/fonts/system" xmlns:v8="http://v8.1c.ru/8.1/data/core" xmlns:v8ui="http://v8.1c.ru/8.1/data/ui" xmlns:web="http://v8.1c.ru/8.1/data/ui/colors/web" xmlns:win="http://v8.1c.ru/8.1/data/ui/colors/windows" xmlns:xr="http://v8.1c.ru/8.3/xcf/readable" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="2.20">
+	<Title>
+		<v8:item>
+			<v8:lang>ru</v8:lang>
+			<v8:content>Версия политик ИИ-ассистента</v8:content>
+		</v8:item>
+	</Title>
+	<AutoTitle>false</AutoTitle>
+	<AutoCommandBar name="ФормаКоманднаяПанель" id="-1">
+		<ChildItems>
+			<Button name="СнятьСнимок" id="1">
+				<Type>CommandBarButton</Type>
+				<CommandName>Form.Command.СнятьСнимок</CommandName>
+				<ExtendedTooltip name="СнятьСнимокРасширеннаяПодсказка" id="2"/>
+			</Button>
+			<Button name="Сравнить" id="3">
+				<Type>CommandBarButton</Type>
+				<CommandName>Form.Command.Сравнить</CommandName>
+				<ExtendedTooltip name="СравнитьРасширеннаяПодсказка" id="4"/>
+			</Button>
+			<Button name="СухойПрогон" id="5">
+				<Type>CommandBarButton</Type>
+				<CommandName>Form.Command.СухойПрогон</CommandName>
+				<ExtendedTooltip name="СухойПрогонРасширеннаяПодсказка" id="6"/>
+			</Button>
+			<Button name="Активировать" id="7">
+				<Type>CommandBarButton</Type>
+				<CommandName>Form.Command.Активировать</CommandName>
+				<ExtendedTooltip name="АктивироватьРасширеннаяПодсказка" id="8"/>
+			</Button>
+			<Button name="СоздатьЧерновик" id="9">
+				<Type>CommandBarButton</Type>
+				<CommandName>Form.Command.СоздатьЧерновик</CommandName>
+				<ExtendedTooltip name="СоздатьЧерновикРасширеннаяПодсказка" id="10"/>
+			</Button>
+			<Button name="КнопкаЭкспорт" id="67">
+				<CommandName>Form.Command.Экспорт</CommandName>
+				<ExtendedTooltip name="КнопкаЭкспортРасширеннаяПодсказка" id="68"/>
+			</Button>
+			<Button name="КнопкаИмпорт" id="69">
+				<CommandName>Form.Command.Импорт</CommandName>
+				<ExtendedTooltip name="КнопкаИмпортРасширеннаяПодсказка" id="70"/>
+			</Button>
+		</ChildItems>
+	</AutoCommandBar>
+	<Events>
+		<Event name="OnCreateAtServer">ПриСозданииНаСервере</Event>
+		<Event name="OnReadAtServer">ПриЧтенииНаСервере</Event>
+	</Events>
+	<ChildItems>
+		<UsualGroup name="ГруппаШапка" id="11">
+			<Group>HorizontalIfPossible</Group>
+			<ExtendedTooltip name="ГруппаШапкаРасширеннаяПодсказка" id="12"/>
+			<ChildItems>
+				<InputField name="Наименование" id="13">
+					<DataPath>Объект.Наименование</DataPath>
+					<HorizontalStretch>true</HorizontalStretch>
+					<ContextMenu name="НаименованиеКонтекстноеМеню" id="14"/>
+					<ExtendedTooltip name="НаименованиеРасширеннаяПодсказка" id="15"/>
+				</InputField>
+				<InputField name="Статус" id="16">
+					<DataPath>Объект.Статус</DataPath>
+					<ReadOnly>true</ReadOnly>
+					<Width>12</Width>
+					<ContextMenu name="СтатусКонтекстноеМеню" id="17"/>
+					<ExtendedTooltip name="СтатусРасширеннаяПодсказка" id="18"/>
+				</InputField>
+			</ChildItems>
+		</UsualGroup>
+		<UsualGroup name="ГруппаАвтор" id="19">
+			<Group>HorizontalIfPossible</Group>
+			<ExtendedTooltip name="ГруппаАвторРасширеннаяПодсказка" id="20"/>
+			<ChildItems>
+				<InputField name="Автор" id="21">
+					<DataPath>Объект.Автор</DataPath>
+					<ReadOnly>true</ReadOnly>
+					<ContextMenu name="АвторКонтекстноеМеню" id="22"/>
+					<ExtendedTooltip name="АвторРасширеннаяПодсказка" id="23"/>
+				</InputField>
+				<InputField name="Создана" id="24">
+					<DataPath>Объект.Создана</DataPath>
+					<ReadOnly>true</ReadOnly>
+					<ContextMenu name="СозданаКонтекстноеМеню" id="25"/>
+					<ExtendedTooltip name="СозданаРасширеннаяПодсказка" id="26"/>
+				</InputField>
+				<InputField name="Активировал" id="27">
+					<DataPath>Объект.Активировал</DataPath>
+					<ReadOnly>true</ReadOnly>
+					<ContextMenu name="АктивировалКонтекстноеМеню" id="28"/>
+					<ExtendedTooltip name="АктивировалРасширеннаяПодсказка" id="29"/>
+				</InputField>
+				<InputField name="Активирована" id="30">
+					<DataPath>Объект.Активирована</DataPath>
+					<ReadOnly>true</ReadOnly>
+					<ContextMenu name="АктивированаКонтекстноеМеню" id="31"/>
+					<ExtendedTooltip name="АктивированаРасширеннаяПодсказка" id="32"/>
+				</InputField>
+			</ChildItems>
+		</UsualGroup>
+		<LabelDecoration name="Подсказка" id="33">
+			<Title formatted="false">
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Администратор самостоятельно активирует изменения. Сравнение и сухой прогон помогают оценить их влияние.</v8:content>
+				</v8:item>
+			</Title>
+			<ContextMenu name="ПодсказкаКонтекстноеМеню" id="34"/>
+			<ExtendedTooltip name="ПодсказкаРасширеннаяПодсказка" id="35"/>
+		</LabelDecoration>
+		<Table name="Изменения" id="36">
+			<ReadOnly>true</ReadOnly>
+			<DataPath>Объект.Изменения</DataPath>
+			<ContextMenu name="ИзмененияКонтекстноеМеню" id="37"/>
+			<AutoCommandBar name="ИзмененияКоманднаяПанель" id="38"/>
+			<ExtendedTooltip name="ИзмененияРасширеннаяПодсказка" id="39"/>
+			<SearchStringAddition name="ИзмененияСтрокаПоиска" id="40">
+				<AdditionSource>
+					<Item>Изменения</Item>
+					<Type>SearchStringRepresentation</Type>
+				</AdditionSource>
+				<ContextMenu name="ИзмененияСтрокаПоискаКонтекстноеМеню" id="41"/>
+				<ExtendedTooltip name="ИзмененияСтрокаПоискаРасширеннаяПодсказка" id="42"/>
+			</SearchStringAddition>
+			<ViewStatusAddition name="ИзмененияСостояниеПросмотра" id="43">
+				<AdditionSource>
+					<Item>Изменения</Item>
+					<Type>ViewStatusRepresentation</Type>
+				</AdditionSource>
+				<ContextMenu name="ИзмененияСостояниеПросмотраКонтекстноеМеню" id="44"/>
+				<ExtendedTooltip name="ИзмененияСостояниеПросмотраРасширеннаяПодсказка" id="45"/>
+			</ViewStatusAddition>
+			<SearchControlAddition name="ИзмененияУправлениеПоиском" id="46">
+				<AdditionSource>
+					<Item>Изменения</Item>
+					<Type>SearchControl</Type>
+				</AdditionSource>
+				<ContextMenu name="ИзмененияУправлениеПоискомКонтекстноеМеню" id="47"/>
+				<ExtendedTooltip name="ИзмененияУправлениеПоискомРасширеннаяПодсказка" id="48"/>
+			</SearchControlAddition>
+			<ChildItems>
+				<InputField name="ИзмененияВид" id="49">
+					<DataPath>Объект.Изменения.Вид</DataPath>
+					<ReadOnly>true</ReadOnly>
+					<Width>12</Width>
+					<ContextMenu name="ИзмененияВидКонтекстноеМеню" id="50"/>
+					<ExtendedTooltip name="ИзмененияВидРасширеннаяПодсказка" id="51"/>
+				</InputField>
+				<InputField name="ИзмененияОписание" id="52">
+					<DataPath>Объект.Изменения.Описание</DataPath>
+					<ReadOnly>true</ReadOnly>
+					<HorizontalStretch>true</HorizontalStretch>
+					<ContextMenu name="ИзмененияОписаниеКонтекстноеМеню" id="53"/>
+					<ExtendedTooltip name="ИзмененияОписаниеРасширеннаяПодсказка" id="54"/>
+				</InputField>
+			</ChildItems>
+		</Table>
+		<InputField name="РезультатПрогона" id="61">
+			<DataPath>РезультатПрогона</DataPath>
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Сухой прогон</v8:content>
+				</v8:item>
+			</Title>
+			<ReadOnly>true</ReadOnly>
+			<MultiLine>true</MultiLine>
+			<AutoMaxWidth>false</AutoMaxWidth>
+			<Height>5</Height>
+			<HorizontalStretch>true</HorizontalStretch>
+			<ContextMenu name="РезультатПрогонаКонтекстноеМеню" id="62"/>
+			<ExtendedTooltip name="РезультатПрогонаРасширеннаяПодсказка" id="63"/>
+		</InputField>
+		<InputField name="Комментарий" id="64">
+			<DataPath>Объект.Комментарий</DataPath>
+			<MultiLine>true</MultiLine>
+			<AutoMaxWidth>false</AutoMaxWidth>
+			<Height>2</Height>
+			<HorizontalStretch>true</HorizontalStretch>
+			<ContextMenu name="КомментарийКонтекстноеМеню" id="65"/>
+			<ExtendedTooltip name="КомментарийРасширеннаяПодсказка" id="66"/>
+		</InputField>
+	</ChildItems>
+	<Attributes>
+		<Attribute name="Объект" id="67">
+			<Type>
+				<v8:Type>cfg:CatalogObject.ИИА_ВерсииПолитик</v8:Type>
+			</Type>
+			<MainAttribute>true</MainAttribute>
+			<SavedData>true</SavedData>
+		</Attribute>
+		<Attribute name="РезультатПрогона" id="68">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Результат прогона</v8:content>
+				</v8:item>
+			</Title>
+			<Type>
+				<v8:Type>xs:string</v8:Type>
+				<v8:StringQualifiers>
+					<v8:Length>0</v8:Length>
+					<v8:AllowedLength>Variable</v8:AllowedLength>
+				</v8:StringQualifiers>
+			</Type>
+		</Attribute>
+	</Attributes>
+	<Commands>
+		<Command name="СнятьСнимок" id="69">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Снять снимок текущих настроек</v8:content>
+				</v8:item>
+			</Title>
+			<Action>СнятьСнимок</Action>
+		</Command>
+		<Command name="Сравнить" id="70">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Сравнить с действующей</v8:content>
+				</v8:item>
+			</Title>
+			<Action>Сравнить</Action>
+		</Command>
+		<Command name="СухойПрогон" id="71">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Сухой прогон</v8:content>
+				</v8:item>
+			</Title>
+			<Action>СухойПрогон</Action>
+		</Command>
+		<Command name="Активировать" id="72">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Активировать</v8:content>
+				</v8:item>
+			</Title>
+			<Action>Активировать</Action>
+		</Command>
+		<Command name="СоздатьЧерновик" id="73">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Новый черновик на основе (откат)</v8:content>
+				</v8:item>
+			</Title>
+			<Action>СоздатьЧерновик</Action>
+		</Command>
+		<Command name="Экспорт" id="74">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Экспорт</v8:content>
+				</v8:item>
+			</Title>
+			<Action>ЭкспортСнимка</Action>
+		</Command>
+		<Command name="Импорт" id="75">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Импорт в новый черновик</v8:content>
+				</v8:item>
+			</Title>
+			<Action>ИмпортСнимка</Action>
+		</Command>
+	</Commands>
+</Form>

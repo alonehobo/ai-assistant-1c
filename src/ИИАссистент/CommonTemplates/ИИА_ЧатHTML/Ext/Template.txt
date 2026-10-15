@@ -1,0 +1,1562 @@
+﻿<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src data:">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ИИ-ассистент</title>
+<style>
+  :root {
+    --fg:#1f2328; --muted:#6b7684; --bg:#f6f7f9; --card:#ffffff; --line:#e3e7ec;
+    --user:#e7f0fd; --userline:#cfe0fa; --accent:#2f6fd0; --accentsoft:#eef4fd;
+    --taxi:#f9d648; --taxiline:#e6c02f; --ok:#2e7d4f; --oksoft:#e9f6ee;
+    --warn:#8a5a00; --warnbg:#fff6dc; --err:#a1261b; --errbg:#fdeceb; --shadow:0 1px 2px rgba(31,35,40,.06), 0 1px 6px rgba(31,35,40,.05);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin:0; padding:0; height:100%; background:var(--bg); color:var(--fg); font-family: Arial, "Segoe UI", sans-serif; font-size:13px; line-height:1.5; }
+  body { display:flex; flex-direction:column; overflow:hidden; }
+
+  /* Каркас: панель истории слева, чат справа; на узком окне панель поверх ленты */
+  #app { flex:1 1 auto; display:flex; min-height:0; position:relative; }
+  #main { flex:1 1 auto; display:flex; flex-direction:column; min-width:0; min-height:0; }
+  #side { flex:0 0 320px; width:320px; display:flex; flex-direction:column; min-height:0; background:#fbfcfd; border-right:1px solid var(--line); }
+  #side.closed { display:none; }
+  .side-head { display:flex; align-items:center; gap:6px; padding:10px 8px 6px 10px; }
+  .side-head input { flex:1 1 auto; min-width:0; height:26px; border:1px solid var(--line); border-radius:13px; padding:0 10px; font:inherit; font-size:12px; outline:none; background:#fff; }
+  .side-head input:focus { border-color:#b9cff3; }
+  .side-head a { color:var(--muted); text-decoration:none; padding:2px 6px; border-radius:6px; }
+  .side-head a:hover { background:var(--accentsoft); color:var(--accent); }
+  #dlgList { flex:1 1 auto; overflow-y:auto; padding:0 6px 8px 6px; }
+  .side-empty { color:var(--muted); font-size:12px; padding:8px 6px; }
+  .dlg { position:relative; padding:5px 24px 5px 8px; border-radius:8px; margin-bottom:1px; }
+  .dlg:hover { background:#eef1f5; }
+  .dlg.current { background:var(--accentsoft); }
+  .dlg a.t { display:block; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; max-height:2.8em; line-height:1.4; word-break:break-word; font-size:12px; color:var(--fg); text-decoration:none; }
+  .dlg .pin { color:#c08a00; margin-right:3px; }
+  .dlg .d { font-size:11px; color:#98a2ae; }
+  .dlg a.menu { position:absolute; right:4px; top:4px; color:#98a2ae; text-decoration:none; padding:0 4px; border-radius:4px; }
+  .dlg a.menu:hover { background:#dfe5ec; color:var(--fg); }
+  .dlg .ops { font-size:11px; margin-top:3px; }
+  .dlg .ops a { color:var(--accent); text-decoration:none; margin-right:10px; cursor:pointer; }
+  .dlg .ops a.danger { color:var(--err); }
+  .dlg input.ren { width:100%; height:24px; border:1px solid #b9cff3; border-radius:6px; padding:0 6px; font:inherit; font-size:12px; outline:none; }
+  @media (max-width: 719px) {
+    #side { position:absolute; left:0; top:0; bottom:0; z-index:5; box-shadow:2px 0 12px rgba(31,35,40,.18); }
+  }
+
+  /* Приветствие: карточка с иконкой ассистента и примерами вопросов */
+  #welcome { flex:0 0 auto; margin:10px 12px 0 12px; padding:10px 12px 10px 52px; position:relative; background:var(--card); border:1px solid var(--line); border-radius:10px; box-shadow:var(--shadow); max-height:180px; overflow-y:auto; color:var(--muted); }
+  #welcome:before { content:"ИИ"; position:absolute; left:12px; top:10px; width:30px; height:30px; border-radius:50%; background:linear-gradient(135deg,#ffe48a,#f9d648); color:#5a4500; font-weight:bold; font-size:11px; line-height:30px; text-align:center; }
+  #welcome p { margin:0 0 8px; }
+  .examples { display:flex; flex-wrap:wrap; gap:6px; }
+  button.example { background:var(--accentsoft); color:var(--accent); border:1px solid transparent; border-radius:14px; padding:4px 11px; cursor:pointer; font:inherit; font-size:12px; text-align:left; }
+  button.example:hover { border-color:#c8dbf7; }
+  button.example:disabled { opacity:.45; cursor:default; }
+
+  /* Лента */
+  #feed { flex:1 1 auto; overflow-y:auto; padding:12px 12px 4px 12px; }
+  .msg { margin:0 0 12px 0; padding:9px 12px; border-radius:10px; max-width:100%; overflow-wrap:anywhere; position:relative; }
+  .msg.assistant { background:var(--card); border:1px solid var(--line); box-shadow:var(--shadow); margin-right:6%; }
+  .msg.user { background:var(--user); border:1px solid var(--userline); margin-left:18%; }
+  .msg.error { background:var(--errbg); border:1px solid #f6cfcb; color:var(--err); }
+  .msg.context { background:transparent; border:1px dashed #cfd6de; color:var(--muted); font-size:12px; }
+  .role { font-size:11px; color:var(--muted); margin-bottom:4px; display:flex; align-items:center; gap:6px; }
+  .msg.assistant .role:before { content:"ИИ"; width:20px; height:20px; border-radius:50%; background:linear-gradient(135deg,#ffe48a,#f9d648); color:#5a4500; font-weight:bold; font-size:9px; line-height:20px; text-align:center; flex:0 0 auto; }
+  .msg.user .role { justify-content:flex-end; }
+  /* Ждущие сообщения: пузыри «Ожидание очереди» под лентой, до ответа на текущий вопрос */
+  #queue { flex:0 0 auto; padding:0 12px; max-height:30%; overflow-y:auto; }
+  .msg.user.queued { opacity:.75; border-style:dashed; }
+  .msg.user.queued .qstate { font-size:11px; color:var(--muted); margin-top:4px; display:flex; gap:10px; justify-content:flex-end; flex-wrap:wrap; }
+  .msg.user.queued .qstate a { color:var(--muted); }
+  .role .time { margin-left:4px; color:#98a2ae; }
+  .warn { background:var(--warnbg); color:var(--warn); padding:5px 9px; border-radius:8px; margin:6px 0; font-size:12px; }
+  .msg p { margin:4px 0; }
+  .msg ul, .msg ol { margin:4px 0 4px 20px; padding:0; }
+  .msg h1, .msg h2, .msg h3 { font-size:14px; margin:8px 0 4px 0; }
+  code { background:#f0f2f5; padding:0 4px; border-radius:4px; font-family: Consolas, monospace; font-size:12px; }
+  pre { background:#f3f5f8; border:1px solid var(--line); padding:8px 10px; border-radius:8px; overflow-x:auto; }
+  pre code { background:none; padding:0; }
+
+  /* Таблицы данных */
+  table.data { border-collapse:separate; border-spacing:0; margin:6px 0; font-size:12px; border:1px solid var(--line); border-radius:8px; overflow:hidden; }
+  table.data th, table.data td { border-bottom:1px solid var(--line); padding:4px 8px; text-align:left; vertical-align:top; }
+  table.data tr:last-child td { border-bottom:none; }
+  table.data th { background:#f3f5f8; color:#3d4651; font-weight:bold; }
+  table.data tr:nth-child(even) td { background:#fafbfc; }
+  table.data td.num { text-align:right; white-space:nowrap; }
+  table.data th.sortable { cursor:pointer; user-select:none; }
+  table.data th.sortable:after { content:" \2195"; color:var(--muted); font-size:10px; }
+  .tbl-title { font-size:11px; color:var(--muted); margin-top:10px; text-transform:none; }
+  .tbl-tools { display:inline-block; margin-left:10px; font-size:11px; }
+  .tbl-bar { margin:-2px 0 6px 0; }
+  .tbl-bar .tbl-tools { margin-left:0; }
+
+  /* Ход работы, сноски и источники */
+  .trace { margin-top:8px; font-size:12px; }
+  .trace ul, #live ul { list-style:none; margin:4px 0 0 0; padding:0 0 0 12px; border-left:2px solid var(--line); }
+  .trace li, #live li { padding:1px 0; color:#3d4651; }
+  .trace li.err, #live li.err { color:var(--err); }
+  .trace .det, #live .det { color:var(--muted); }
+  .details { margin-top:6px; }
+  .details > a.more { font-size:12px; }
+  .details > div { margin-top:4px; padding-left:10px; border-left:2px solid var(--line); }
+  #live { flex:0 0 auto; padding:0 14px 4px 14px; font-size:12px; color:var(--muted); max-height:120px; overflow-y:auto; }
+  sup.cite { font-size:10px; line-height:0; }
+  sup.cite a { color:var(--accent); text-decoration:none; }
+  .sources { margin-top:8px; font-size:12px; border-top:1px solid var(--line); padding-top:6px; }
+  .sources .src-title, .sources .src-more { color:var(--muted); font-size:11px; }
+  .sources .src { margin:2px 0; }
+  .sources .src-n { color:var(--muted); margin-right:4px; }
+  .sources .note { color:var(--warn); font-size:11px; margin-left:18px; }
+  .configs { margin-top:6px; font-size:12px; color:#3d4651; }
+  a.obj { color:var(--accent); text-decoration:none; border-bottom:1px dotted var(--accent); }
+
+  /* Действия под ответом, ссылки на отчёты, подсказки следующих вопросов */
+  .reports { margin-top:8px; }
+  a.report { display:inline-block; margin:2px 8px 2px 0; padding:3px 10px; border:1px solid #c8dbf7; background:var(--accentsoft); border-radius:14px; color:var(--accent); text-decoration:none; font-size:12px; }
+  a.report:hover { border-color:var(--accent); }
+  .actions { margin-top:6px; font-size:11px; }
+  .actions a, .more { color:#8a94a1; text-decoration:none; margin-right:12px; cursor:pointer; }
+  .actions a:hover, .more:hover { color:var(--accent); }
+  .suggest { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+  .suggest a { border:1px solid #c8dbf7; background:var(--accentsoft); color:var(--accent); border-radius:14px; padding:3px 11px; text-decoration:none; font-size:12px; }
+  .suggest a:hover { border-color:var(--accent); }
+
+  /* Карточки: черновики, формы */
+  .draft { border:1px solid #f0d98a; border-left:4px solid var(--taxi); border-radius:8px; padding:8px 12px; margin:8px 0; background:#fffdf3; }
+  .draft-title { font-weight:bold; font-size:12px; margin-bottom:4px; }
+  .draft-bar { margin-top:8px; }
+  .draft-bar.busy a { pointer-events:none; opacity:.5; }
+  .change-status { font-size:12px; margin-top:6px; color:#3d4651; }
+  .change-dry { font-size:12px; margin-top:4px; }
+  .change-dry ul, .change-result ul { margin:4px 0 0 0; padding-left:18px; }
+  .formshot { margin:8px 0; padding:8px 12px; border:1px solid var(--line); border-left:4px solid var(--accent); border-radius:8px; background:#f8fbff; }
+  .formshot .fs-title { font-size:12px; color:#3d4651; font-weight:bold; margin-bottom:4px; }
+  .formshot .fs-bar { display:flex; flex-wrap:wrap; align-items:center; gap:6px; }
+  .formshot .fs-bar a.report { margin:0; }
+
+  /* Графики и схемы */
+  .chart { margin:8px 0; max-width:720px; }
+  .chart-title { font-size:12px; font-weight:bold; margin-bottom:4px; color:#3d4651; }
+  .chart svg { width:100%; height:auto; overflow:visible; }
+  .chart .legend { display:flex; flex-wrap:wrap; gap:10px; font-size:11px; margin-top:4px; }
+  .chart .legend span { cursor:pointer; user-select:none; }
+  .chart .legend span.off { opacity:.35; }
+  .chart .legend i { display:inline-block; width:10px; height:10px; border-radius:3px; margin-right:4px; vertical-align:-1px; }
+  .chart .bar:hover, .chart .slice:hover { opacity:.8; }
+  .chart.pie { max-width:360px; }
+  .diagram { margin:8px 0; overflow-x:auto; }
+  .diagram svg { max-width:100%; height:auto; }
+  .diagram-src { font-size:11px; color:var(--muted); }
+
+  /* Статус и ввод */
+  #status { flex:0 0 auto; padding:0 14px 6px 14px; color:var(--muted); font-size:12px; min-height:18px; }
+  #composer { flex:0 0 auto; margin:0 12px 12px 12px; padding:8px 10px; background:var(--card); border:1px solid var(--line); border-radius:12px; box-shadow:var(--shadow); }
+  #composer:focus-within { border-color:#b9cff3; }
+  #composer textarea { width:100%; min-height:48px; max-height:200px; resize:vertical; border:none; padding:4px 2px; font:inherit; outline:none; background:transparent; }
+  #attachments { display:flex; flex-wrap:wrap; gap:6px; margin:4px 0 0 0; }
+  .thumb { position:relative; width:72px; height:54px; border:1px solid var(--line); border-radius:6px; overflow:hidden; background:#fff; }
+  .thumb img { width:100%; height:100%; object-fit:cover; }
+  .thumb a { position:absolute; top:0; right:0; background:rgba(0,0,0,.55); color:#fff; text-decoration:none; font-size:11px; line-height:14px; padding:0 4px; border-bottom-left-radius:4px; }
+  .doc { display:inline-flex; align-items:center; gap:6px; height:28px; padding:0 4px 0 8px; border:1px solid var(--line); border-radius:6px; background:#fff; font-size:12px; color:var(--fg); max-width:260px; }
+  .doc span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .doc svg { flex:0 0 auto; color:var(--muted); }
+  .doc a { color:var(--muted); text-decoration:none; padding:0 4px; }
+  .doc a:hover { color:#B3261E; }
+  a.doc { text-decoration:none; cursor:pointer; }
+  a.doc * { pointer-events:none; }
+  a.doc:hover { border-color:var(--muted); }
+  .msg .docs { display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
+  .doc.base { border-style:dashed; }
+  .afile { display:inline-flex; align-items:center; gap:8px; margin:6px 0; padding:6px 10px; border:1px solid var(--line); border-radius:8px; background:#fff; font-size:12px; max-width:100%; }
+  .afile .af-name { font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:280px; }
+  .afile .af-meta { color:var(--muted); white-space:nowrap; }
+  .afile a { color:#1a5fb4; text-decoration:none; white-space:nowrap; }
+  .afile a:hover { text-decoration:underline; }
+  .afiles { margin-top:6px; }
+  .afiles details { margin-top:4px; font-size:12px; }
+  .afiles summary { cursor:pointer; color:var(--muted); }
+  select.model { height:26px; max-width:220px; border:1px solid var(--line); border-radius:13px; padding:0 8px; font:inherit; font-size:12px; color:var(--fg); background:#fff; outline:none; cursor:pointer; }
+  select.model:hover, select.model:focus { border-color:#b9cff3; }
+  .msg .shots { display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
+  .msg .shots img { max-width:220px; max-height:140px; border:1px solid var(--line); border-radius:6px; }
+  .bar { display:flex; align-items:center; gap:8px; margin-top:4px; }
+  .bar .hint { flex:1; color:#98a2ae; font-size:11px; }
+  a.btn { display:inline-block; padding:5px 16px; border-radius:16px; text-decoration:none; font-size:12px; border:1px solid var(--line); color:var(--fg); background:#fff; }
+  a.btn.primary { background:var(--taxi); border-color:var(--taxiline); color:#1f2328; font-weight:bold; }
+  a.btn.primary:hover { background:#f7cf2e; }
+  a.btn.off { opacity:.4; pointer-events:none; }
+  a.clip { display:inline-flex; align-items:center; justify-content:center; width:28px; height:28px; border-radius:50%; text-decoration:none; color:var(--muted); }
+  a.clip svg { display:block; }
+  a.clip:hover { background:var(--accentsoft); color:var(--accent); }
+  .hidden { display:none; }
+</style>
+</head>
+<body>
+<div id="app">
+<div id="side" aria-label="История диалогов">
+  <div class="side-head">
+    <input id="dlgSearch" type="text" placeholder="Поиск: Enter — и по тексту диалогов" maxlength="200">
+    <a href="#" id="sideClose" title="Скрыть историю">&#x00AB;</a>
+  </div>
+  <div id="dlgList"></div>
+</div>
+<div id="main">
+<div id="welcome" aria-label="Возможности ассистента"><p>Проверяю доступные возможности…</p></div>
+<div id="feed"></div>
+<div id="queue"></div>
+<div id="live" class="hidden"></div>
+<div id="status"></div>
+<div id="composer">
+  <textarea id="input" placeholder="Задайте вопрос по доступным данным. Enter — отправить, Shift+Enter — новая строка"></textarea>
+  <div id="attachments"></div>
+  <div class="bar">
+    <a class="clip" id="sideBtn" href="#" title="История диалогов"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg></a>
+    <select class="model hidden" id="modelSel" title="Модель для ответа"></select>
+    <a class="hidden" id="modelLink" href="#iia/model"></a>
+    <a class="clip hidden" id="pasteBtn" href="#iia/paste" title="Вставить скриншот из буфера обмена"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg></a>
+    <a class="clip hidden" id="fileBtn" href="#iia/file" title="Приложить файл"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg></a>
+    <a class="clip hidden" id="baseFileBtn" href="#iia/bfile" title="Приложить файл из базы (присоединённые файлы объекта)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg></a>
+    <a class="hidden" id="autoPaste" href="#iia/paste/auto"></a>
+    <span class="hint" id="hint"></span>
+    <a class="btn off" id="stopBtn" href="#iia/stop">Стоп</a>
+    <a class="btn primary" id="sendBtn" href="#iia/send">Отправить</a>
+  </div>
+  <textarea id="iia-outbox" class="hidden" readonly></textarea>
+  <span id="iia-request" class="hidden"></span>
+  <a class="hidden" id="cmdLink" href="#iia/cmd"></a>
+</div>
+</div>
+</div>
+<script>
+"use strict";
+(function () {
+  var feed = document.getElementById("feed");
+  var statusLine = document.getElementById("status");
+  var counter = 0;
+  var input = document.getElementById("input");
+  var outbox = document.getElementById("iia-outbox");
+  var sendBtn = document.getElementById("sendBtn");
+  var stopBtn = document.getElementById("stopBtn");
+  var attachBox = document.getElementById("attachments");
+  var hint = document.getElementById("hint");
+  // docs - PDF (нужна модель с документами), textDocs - текст и Excel (уходят текстом), baseFiles - «Файл из базы».
+  var config = { images: false, imageModel: true, maxImages: 3, docs: false, textDocs: false, baseFiles: false, maxDocs: 5, models: [], model: "" };
+  var pending = [];   // dataURL вложений, ещё не отправленных
+  var sentShots = []; // вложения последнего отправленного сообщения - для показа в ленте
+  var pendingDocs = []; // файлы-документы {name, url}, ещё не отправленные
+  var pendingBase = []; // файлы из базы {id, name, size}: id реестра 1С, данных файла на странице нет
+  var DOC_EXT = /\.(pdf|txt|md|csv|json|xml|log|xlsx|xls)$/i, PDF_EXT = /\.pdf$/i, DOC_MAX_BYTES = 10 * 1024 * 1024;
+  var modelSel = document.getElementById("modelSel");
+  var busy = false;
+  var lastQuestion = "";
+  var welcome = document.getElementById("welcome");
+
+  function esc(s) {
+    return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  }
+
+  // Ссылки текста ответа [текст](#k): k — номер в links реплики, ведёт только на id реестра формы.
+  var curLinks = [];
+
+  // Безопасный markdown: сначала экранируем весь HTML, затем размечаем. Картинки не создаются; ссылки — только
+  // проверенные сервером [текст](#k), остальные остаются текстом.
+  function inline(s) {
+    s = s.replace(/`([^`]+)`/g, "<code>$1</code>");
+    s = s.replace(/\[([^\[\]\n]{1,200})\]\(#(\d{1,3})\)/g, function (m, t, k) {
+      var l = curLinks[Number(k) - 1];
+      if (!l || l.id == null) return t;
+      return "<a class='obj' href='#iia/open/" + Number(l.id) + "'>" + t + "</a>";
+    });
+    s = s.replace(/\[\[file:(a\d{1,3})\]\]/g, "<span class='afile-slot' data-file='$1'></span>");
+    s = s.replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>");
+    s = s.replace(/(^|[^*])\*([^*\n]+)\*/g, "$1<i>$2</i>");
+    return s;
+  }
+
+  function isTableSep(line) { return /^\s*\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)*\|?\s*$/.test(line); }
+  function cells(line) {
+    var t = line.trim();
+    if (t.charAt(0) === "|") t = t.slice(1);
+    if (t.charAt(t.length - 1) === "|") t = t.slice(0, -1);
+    return t.split("|").map(function (c) { return c.trim(); });
+  }
+
+  function markdown(src) { return markdownLines(esc(src || "").replace(/\r/g, "").split("\n")); }
+
+  // Строки уже экранированы: блок ```details размечается рекурсивно из тех же строк.
+  function markdownLines(lines) {
+    var out = [], i = 0, para = [];
+    function flush() { if (para.length) { out.push("<p>" + inline(para.join("<br>")) + "</p>"); para = []; } }
+    while (i < lines.length) {
+      var line = lines[i];
+      var fence = /^```\s*([a-zA-Z]*)/.exec(line);
+      if (fence) {
+        flush(); var code = []; i++;
+        while (i < lines.length && !/^```/.test(lines[i])) { code.push(lines[i]); i++; }
+        var lang = (fence[1] || "").toLowerCase();
+        // Текст уже экранирован; служебные блоки отдаются обработчикам через textContent.
+        if (lang === "mermaid") out.push("<pre class='diagram-pending hidden'>" + code.join("\n") + "</pre>");
+        else if (lang === "suggest") out.push("<pre class='suggest-pending hidden'>" + code.join("\n") + "</pre>");
+        else if (lang === "details") out.push("<div class='details'><a class='more' href='#'></a><div>" + markdownLines(code) + "</div></div>");
+        else out.push("<pre><code>" + code.join("\n") + "</code></pre>");
+        i++; continue;
+      }
+      var h = /^(#{1,3})\s+(.*)$/.exec(line);
+      if (h) { flush(); out.push("<h" + h[1].length + ">" + inline(h[2]) + "</h" + h[1].length + ">"); i++; continue; }
+      if (/\|/.test(line) && i + 1 < lines.length && isTableSep(lines[i + 1])) {
+        flush(); var head = cells(line); i += 2; var rows = [];
+        while (i < lines.length && /\|/.test(lines[i]) && lines[i].trim() !== "") { rows.push(cells(lines[i])); i++; }
+        var t = "<table class='data'><tr>" + head.map(function (c) { return "<th>" + inline(c) + "</th>"; }).join("") + "</tr>";
+        rows.forEach(function (r) { t += "<tr>" + r.map(function (c) { return "<td>" + inline(c) + "</td>"; }).join("") + "</tr>"; });
+        out.push(t + "</table>"); continue;
+      }
+      if (/^\s*[-*]\s+/.test(line)) {
+        flush(); var items = [];
+        while (i < lines.length && /^\s*[-*]\s+/.test(lines[i])) { items.push("<li>" + inline(lines[i].replace(/^\s*[-*]\s+/, "")) + "</li>"); i++; }
+        out.push("<ul>" + items.join("") + "</ul>"); continue;
+      }
+      if (/^\s*\d+[.)]\s+/.test(line)) {
+        flush(); var oitems = [];
+        while (i < lines.length && /^\s*\d+[.)]\s+/.test(lines[i])) { oitems.push("<li>" + inline(lines[i].replace(/^\s*\d+[.)]\s+/, "")) + "</li>"); i++; }
+        out.push("<ol>" + oitems.join("") + "</ol>"); continue;
+      }
+      if (line.trim() === "") { flush(); i++; continue; }
+      para.push(line); i++;
+    }
+    flush();
+    return out.join("");
+  }
+
+  // Ссылка на объект или отчёт: только числовой идентификатор реестра формы, текст — через textContent.
+  function objLink(id, text, cls) {
+    var a = document.createElement("a");
+    a.className = cls || "obj";
+    a.href = "#iia/open/" + Number(id);
+    a.textContent = text;
+    return a;
+  }
+
+  // Автоссылки в тексте реплики: точные вхождения представлений объектов хода (от длинных к коротким).
+  function linkObjects(root, objects) {
+    var list = (objects || []).filter(function (o) { return o && o.id != null && o.text && String(o.text).length >= 4; })
+      .sort(function (a, b) { return String(b.text).length - String(a.text).length; });
+    if (!list.length) return;
+    var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null, false);
+    var nodes = [], n;
+    while ((n = walker.nextNode())) {
+      if (n.parentNode && n.parentNode.nodeName !== "A" && n.parentNode.nodeName !== "CODE") nodes.push(n);
+    }
+    nodes.forEach(function (node) {
+      var text = node.nodeValue, parts = [], pos = 0, changed = false;
+      while (pos < text.length) {
+        var best = null, bestAt = -1;
+        list.forEach(function (o) {
+          var at = text.indexOf(String(o.text), pos);
+          if (at >= 0 && (bestAt < 0 || at < bestAt)) { best = o; bestAt = at; }
+        });
+        if (!best) break;
+        if (bestAt > pos) parts.push(document.createTextNode(text.slice(pos, bestAt)));
+        parts.push(objLink(best.id, String(best.text)));
+        pos = bestAt + String(best.text).length;
+        changed = true;
+      }
+      if (!changed) return;
+      if (pos < text.length) parts.push(document.createTextNode(text.slice(pos)));
+      var frag = document.createDocumentFragment();
+      parts.forEach(function (x) { frag.appendChild(x); });
+      node.parentNode.replaceChild(frag, node);
+    });
+  }
+
+  // ---- Графики: данные приходят из 1С (make_chart), SVG строится через DOM ----
+  var PALETTE = ["#0b62c4", "#e8912d", "#2da44e", "#8250df", "#cf222e", "#1b7c83", "#bf8700", "#6e7781"];
+  var SVGNS = "http://www.w3.org/2000/svg";
+  function svgEl(name, attrs, parent) {
+    var e = document.createElementNS(SVGNS, name);
+    for (var k in attrs) if (attrs.hasOwnProperty(k)) e.setAttribute(k, attrs[k]);
+    if (parent) parent.appendChild(e);
+    return e;
+  }
+  function fmtNum(v) {
+    var a = Math.abs(v), r;
+    if (a >= 1e9) r = (v / 1e9).toFixed(1) + " млрд";
+    else if (a >= 1e6) r = (v / 1e6).toFixed(1) + " млн";
+    else if (a >= 1e4) r = (v / 1e3).toFixed(0) + " тыс";
+    else r = String(Math.round(v * 100) / 100);
+    return r.replace(".", ",");
+  }
+  function fullNum(v) { return String(v).replace(/\B(?=(\d{3})+(?!\d))/g, " ").replace(".", ","); }
+  function tip(node, text) { var t = svgEl("title", {}, node); t.textContent = text; }
+  function shortLabel(s, n) { s = String(s); return s.length > n ? s.slice(0, n - 1) + "…" : s; }
+
+  function renderChart(spec) {
+    var wrap = document.createElement("div");
+    wrap.className = "chart" + (spec.type === "pie" ? " pie" : "");
+    if (spec.title) { var t = document.createElement("div"); t.className = "chart-title"; t.textContent = spec.title; wrap.appendChild(t); }
+    var labels = spec.labels || [], series = spec.series || [], type = spec.type || "bar";
+    var visible = series.map(function () { return true; });
+    var holder = document.createElement("div");
+    wrap.appendChild(holder);
+    function draw() {
+      holder.innerHTML = "";
+      if (type === "pie") drawPie(holder, labels, series[0]);
+      else drawAxes(holder, labels, series, visible, type);
+    }
+    draw();
+    // Легенда: щелчок скрывает и показывает ряд.
+    var legend = document.createElement("div");
+    legend.className = "legend";
+    var items = type === "pie" ? labels : series.map(function (x) { return x.name; });
+    items.forEach(function (name, idx) {
+      var sp = document.createElement("span");
+      var sw = document.createElement("i"); sw.style.background = PALETTE[idx % PALETTE.length];
+      sp.appendChild(sw); sp.appendChild(document.createTextNode(shortLabel(name, 40)));
+      if (type !== "pie") sp.onclick = function () { visible[idx] = !visible[idx]; sp.className = visible[idx] ? "" : "off"; draw(); };
+      legend.appendChild(sp);
+    });
+    if (items.length > 1 || type === "pie") wrap.appendChild(legend);
+    return wrap;
+  }
+
+  function drawAxes(holder, labels, series, visible, type) {
+    var hbar = type === "hbar", W = 680, rowH = 22;
+    var H = hbar ? Math.max(120, labels.length * rowH + 30) : 300;
+    var padL = hbar ? 170 : 56, padB = hbar ? 22 : 60, padT = 10, padR = 16;
+    var svg = svgEl("svg", { viewBox: "0 0 " + W + " " + H, role: "img" });
+    var vals = [];
+    series.forEach(function (s, i) { if (visible[i]) vals = vals.concat(s.values); });
+    var max = Math.max.apply(null, vals.concat([0])), min = Math.min.apply(null, vals.concat([0]));
+    if (max === min) max = min + 1;
+    var plotW = W - padL - padR, plotH = H - padT - padB;
+    function scale(v) { return (v - min) / (max - min); }
+    // Сетка и подписи шкалы.
+    for (var g = 0; g <= 4; g++) {
+      var gv = min + (max - min) * g / 4;
+      if (hbar) {
+        var gx = padL + plotW * g / 4;
+        svgEl("line", { x1: gx, y1: padT, x2: gx, y2: H - padB, stroke: "#eaeef2" }, svg);
+        svgEl("text", { x: gx, y: H - 6, "font-size": 10, "text-anchor": "middle", fill: "#5f6b7a" }, svg).textContent = fmtNum(gv);
+      } else {
+        var gy = padT + plotH - plotH * g / 4;
+        svgEl("line", { x1: padL, y1: gy, x2: W - padR, y2: gy, stroke: "#eaeef2" }, svg);
+        svgEl("text", { x: padL - 6, y: gy + 3, "font-size": 10, "text-anchor": "end", fill: "#5f6b7a" }, svg).textContent = fmtNum(gv);
+      }
+    }
+    var shown = [];
+    series.forEach(function (s, i) { if (visible[i]) shown.push(i); });
+    var n = labels.length, band = (hbar ? plotH : plotW) / Math.max(1, n);
+    if (type === "line") {
+      shown.forEach(function (si) {
+        var pts = series[si].values.map(function (v, k) {
+          return [padL + band * (k + 0.5), padT + plotH - plotH * scale(v)];
+        });
+        svgEl("polyline", { points: pts.map(function (p) { return p.join(","); }).join(" "), fill: "none",
+          stroke: PALETTE[si % PALETTE.length], "stroke-width": 2 }, svg);
+        pts.forEach(function (p, k) {
+          var c = svgEl("circle", { cx: p[0], cy: p[1], r: 3.5, fill: PALETTE[si % PALETTE.length], "class": "bar" }, svg);
+          tip(c, labels[k] + " — " + series[si].name + ": " + fullNum(series[si].values[k]));
+        });
+      });
+    } else {
+      var inner = band * 0.8 / Math.max(1, shown.length);
+      shown.forEach(function (si, j) {
+        series[si].values.forEach(function (v, k) {
+          var r;
+          if (hbar) {
+            var y = padT + band * k + band * 0.1 + inner * j;
+            var x0 = padL + plotW * scale(Math.min(0, v)), w = Math.abs(plotW * (scale(v) - scale(0)));
+            r = svgEl("rect", { x: x0, y: y, width: Math.max(1, w), height: inner, fill: PALETTE[si % PALETTE.length], "class": "bar" }, svg);
+          } else {
+            var x = padL + band * k + band * 0.1 + inner * j;
+            var y1 = padT + plotH - plotH * scale(Math.max(0, v)), h = Math.abs(plotH * (scale(v) - scale(0)));
+            r = svgEl("rect", { x: x, y: y1, width: Math.max(1, inner - 1), height: Math.max(1, h), fill: PALETTE[si % PALETTE.length], "class": "bar" }, svg);
+          }
+          tip(r, labels[k] + " — " + series[si].name + ": " + fullNum(v));
+        });
+      });
+    }
+    // Подписи категорий.
+    labels.forEach(function (l, k) {
+      if (hbar) {
+        svgEl("text", { x: padL - 6, y: padT + band * (k + 0.5) + 3, "font-size": 11, "text-anchor": "end", fill: "#1f2328" }, svg).textContent = shortLabel(l, 28);
+      } else if (n <= 24 || k % Math.ceil(n / 24) === 0) {
+        var tx = padL + band * (k + 0.5), ty = H - padB + 12;
+        var te = svgEl("text", { x: tx, y: ty, "font-size": 10, "text-anchor": "end", fill: "#1f2328",
+          transform: "rotate(-35 " + tx + " " + ty + ")" }, svg);
+        te.textContent = shortLabel(l, 18);
+      }
+    });
+    holder.appendChild(svg);
+  }
+
+  function drawPie(holder, labels, s) {
+    var W = 300, R = 120, cx = 150, cy = 140;
+    var svg = svgEl("svg", { viewBox: "0 0 " + W + " 280", role: "img", style: "max-width:320px" });
+    var vals = (s ? s.values : []).map(function (v) { return Math.max(0, v); });
+    var total = vals.reduce(function (a, b) { return a + b; }, 0) || 1, a0 = -Math.PI / 2;
+    vals.forEach(function (v, k) {
+      var a1 = a0 + 2 * Math.PI * v / total, large = a1 - a0 > Math.PI ? 1 : 0;
+      var d = vals.length === 1 ? "M" + (cx - R) + "," + cy + "a" + R + "," + R + " 0 1,0 " + 2 * R + ",0a" + R + "," + R + " 0 1,0 " + (-2 * R) + ",0"
+        : "M" + cx + "," + cy + "L" + (cx + R * Math.cos(a0)) + "," + (cy + R * Math.sin(a0)) +
+          "A" + R + "," + R + " 0 " + large + ",1 " + (cx + R * Math.cos(a1)) + "," + (cy + R * Math.sin(a1)) + "Z";
+      var p = svgEl("path", { d: d, fill: PALETTE[k % PALETTE.length], stroke: "#fff", "class": "slice" }, svg);
+      tip(p, labels[k] + ": " + fullNum(v) + " (" + Math.round(v * 1000 / total) / 10 + "%)");
+      a0 = a1;
+    });
+    holder.appendChild(svg);
+  }
+
+  // ---- Схемы mermaid: библиотека подгружается из 1С при первой схеме ----
+  var mermaidState = "none", mermaidQueue = [], diagramSeq = 0;
+  function requestLib(name) {
+    var req = document.getElementById("iia-request");
+    req.setAttribute("data-lib", name);
+  }
+  window.iiaLoadLib = function (name, code) {
+    if (name !== "mermaid" || mermaidState === "ready") return "ok";
+    try {
+      var sc = document.createElement("script");
+      sc.text = code;
+      document.head.appendChild(sc);
+      window.mermaid.initialize({ startOnLoad: false, securityLevel: "strict", theme: "neutral",
+        flowchart: { htmlLabels: false }, fontFamily: "Arial, sans-serif" });
+      mermaidState = "ready";
+    } catch (e) {
+      mermaidState = "failed";
+    }
+    var q = mermaidQueue; mermaidQueue = [];
+    q.forEach(renderDiagram);
+    return mermaidState;
+  };
+  function renderDiagram(pre) {
+    var src = pre.textContent;
+    var box = document.createElement("div");
+    box.className = "diagram";
+    pre.parentNode.insertBefore(box, pre);
+    if (mermaidState === "failed") { box.className = "diagram-src"; box.textContent = "Схему не удалось отобразить в этом клиенте."; return; }
+    if (mermaidState !== "ready") {
+      box.textContent = "Рисую схему...";
+      box.setAttribute("data-wait", "1");
+      mermaidQueue.push(pre); box.parentNode.removeChild(box);
+      if (mermaidState === "none") { mermaidState = "loading"; requestLib("mermaid"); }
+      return;
+    }
+    diagramSeq++;
+    window.mermaid.render("iiaDiagram" + diagramSeq, src).then(function (r) {
+      box.innerHTML = r.svg;
+    }, function () {
+      box.className = "diagram-src"; box.textContent = "Схема не распознана.";
+    });
+  }
+  function renderDiagrams(root) {
+    Array.prototype.forEach.call(root.querySelectorAll("pre.diagram-pending"), function (pre) {
+      pre.className = "hidden";
+      renderDiagram(pre);
+    });
+  }
+
+  // ---- Подробности ответа: блок ```details свёрнут под ссылкой «Подробнее» ----
+  function renderDetails(root) {
+    Array.prototype.forEach.call(root.querySelectorAll("div.details"), function (box) {
+      var head = box.firstChild, part = head.nextSibling;
+      function show(open) { part.className = open ? "" : "hidden"; head.textContent = (open ? "\u25BE " : "\u25B8 ") + "Подробнее"; }
+      show(false);
+      head.onclick = function (e) { e.preventDefault(); e.stopPropagation(); show(part.className === "hidden"); };
+    });
+  }
+
+  // Текст для копирования: без ссылок реестра и разметки блока подробностей - краткий ответ и подробности подряд.
+  function plainAnswer(text) {
+    return String(text || "").replace(/\[\[file:a\d{1,3}\]\]/g, "").replace(/\[([^\[\]\n]{1,200})\]\(#\d{1,3}\)/g, "$1")
+      .replace(/```details[^\n]*\n([\s\S]*?)(?:\n```|$)/g, "$1");
+  }
+
+  // ---- Подсказки следующих вопросов ----
+  function renderSuggest(root, target) {
+    Array.prototype.forEach.call(root.querySelectorAll("pre.suggest-pending"), function (pre) {
+      var list = [];
+      try { list = JSON.parse(pre.textContent); } catch (e) { list = []; }
+      pre.parentNode.removeChild(pre);
+      if (!list || !list.length) return;
+      var box = document.createElement("div");
+      box.className = "suggest";
+      list.slice(0, 3).forEach(function (q) {
+        if (typeof q !== "string" || !q.trim()) return;
+        var a = document.createElement("a");
+        a.href = "#iia/send";
+        a.textContent = q.slice(0, 120);
+        // Нажатие подставляет вопрос и отправляет его тем же путём, что и кнопка «Отправить».
+        // Во время хода вопрос встаёт в очередь.
+        a.addEventListener("click", function () { input.value = q; queueMessage(); }, true);
+        box.appendChild(a);
+      });
+      target.appendChild(box);
+    });
+  }
+
+  // ---- Таблицы: сортировка по заголовку, открытие в Excel ----
+  function makeSortable(table, rowsData) {
+    var head = table.rows[0];
+    Array.prototype.forEach.call(head.cells, function (th, col) {
+      th.className = "sortable";
+      var asc = true;
+      th.onclick = function () {
+        var body = Array.prototype.slice.call(table.rows, 1);
+        body.sort(function (a, b) {
+          var x = a.cells[col].getAttribute("data-v"), y = b.cells[col].getAttribute("data-v");
+          var nx = parseFloat(x), ny = parseFloat(y);
+          var r = (!isNaN(nx) && !isNaN(ny) && String(nx) === x && String(ny) === y) ? nx - ny : String(x).localeCompare(String(y), "ru");
+          return asc ? r : -r;
+        });
+        asc = !asc;
+        body.forEach(function (tr) { table.appendChild(tr); });
+      };
+    });
+  }
+  function copyText(text) {
+    var ta = document.createElement("textarea");
+    ta.value = text; document.body.appendChild(ta); ta.select();
+    try { document.execCommand("copy"); } catch (e) { /* копирование недоступно */ }
+    document.body.removeChild(ta);
+  }
+
+  // Таблица данных строится через DOM и textContent — без интерпретации HTML.
+  function dataTable(tbl) {
+    var wrap = document.createElement("div");
+    // Данные промежуточных запросов свёрнуты: ответ - в тексте, таблица - по требованию.
+    var title = document.createElement("a");
+    title.className = "tbl-title more";
+    title.href = "#";
+    title.textContent = "\u25B8 Данные: " + (tbl.title || "") + (tbl.rows ? " — строк: " + tbl.rows.length : "");
+    wrap.appendChild(title);
+    var table = document.createElement("table");
+    table.className = "data hidden";
+    title.onclick = function (e) {
+      e.preventDefault(); e.stopPropagation();
+      var hidden = table.classList.toggle("hidden");
+      title.textContent = (hidden ? "\u25B8" : "\u25BE") + title.textContent.slice(1);
+      if (more) more.classList.toggle("hidden", hidden);
+    };
+    var more = null;
+    var tr = document.createElement("tr");
+    (tbl.columns || []).forEach(function (c) { var th = document.createElement("th"); th.textContent = c; tr.appendChild(th); });
+    table.appendChild(tr);
+    var limit = 50;
+    (tbl.rows || []).forEach(function (r, idx) {
+      var row = document.createElement("tr");
+      if (idx >= limit) row.className = "hidden extra";
+      var links = (tbl.links && tbl.links[idx]) || [];
+      r.forEach(function (v, col) {
+        var td = document.createElement("td");
+        if (typeof v === "number") td.className = "num";
+        var text = (v === null || v === undefined) ? "" : String(v);
+        td.setAttribute("data-v", text);
+        if (links[col] !== null && links[col] !== undefined && text !== "") { td.appendChild(objLink(links[col], text)); }
+        else { td.textContent = text; }
+        row.appendChild(td);
+      });
+      table.appendChild(row);
+    });
+    wrap.appendChild(table);
+    makeSortable(table);
+    if (tbl.id !== null && tbl.id !== undefined) {
+      var xl = document.createElement("a");
+      xl.href = "#iia/excel/" + Number(tbl.id); xl.className = "more tbl-tools"; xl.textContent = "Открыть в Excel";
+      title.parentNode.insertBefore(xl, title.nextSibling);
+    }
+    if ((tbl.rows || []).length > limit) {
+      more = document.createElement("span");
+      more.className = "more hidden";
+      more.textContent = "Показать все строки";
+      more.onclick = function () {
+        Array.prototype.forEach.call(table.querySelectorAll("tr.extra"), function (x) { x.classList.toggle("hidden"); });
+      };
+      wrap.appendChild(more);
+    }
+    return wrap;
+  }
+
+  // Карточка черновика документа: поля и кнопки. Подтверждает только пользователь (обработчик в 1С).
+  function renderDraft(d) {
+    var card = document.createElement("div");
+    card.className = "draft";
+    var t = document.createElement("div"); t.className = "draft-title"; t.textContent = d.title || "Черновик"; card.appendChild(t);
+    if (d.warning) { var w = document.createElement("div"); w.className = "warn"; w.textContent = d.warning; card.appendChild(w); }
+    var tbl = document.createElement("table"); tbl.className = "data";
+    (d.lines || []).forEach(function (l) {
+      var tr = document.createElement("tr");
+      var a1 = document.createElement("td"); a1.textContent = l.name; tr.appendChild(a1);
+      var a2 = document.createElement("td"); a2.textContent = l.value == null ? "" : String(l.value); tr.appendChild(a2);
+      tbl.appendChild(tr);
+    });
+    card.appendChild(tbl);
+    var bar = document.createElement("div"); bar.className = "draft-bar";
+    var ok = document.createElement("a"); ok.className = "report"; ok.href = "#iia/draft/" + Number(d.id) + "/open"; ok.textContent = "Открыть черновик";
+    var no = document.createElement("a"); no.className = "more"; no.href = "#iia/draft/" + Number(d.id) + "/reject"; no.textContent = "Отклонить";
+    bar.appendChild(ok); bar.appendChild(no); card.appendChild(bar);
+    return card;
+  }
+
+  // Карточка изменения существующего объекта: было/стало, итог пробного прогона, кнопки. Записывает только 1С
+  // по кнопке «Выполнить» пользователя; значения выводятся только через textContent.
+  var CHANGE_STATUS = { "Ожидает": "Ожидает подтверждения", "Выполнено": "Выполнено", "Отклонено": "Отклонено",
+    "Отказ": "Отказ", "Ошибка": "Ошибка", "Просрочено": "Срок истёк" };
+  var DRY_STAGE = { fill_check: "проверка заполнения", lock: "блокировка", write: "запись", post: "проведение",
+    timeout: "тайм-аут", error: "ошибка", transaction: "транзакция" };
+  function textList(items) {
+    var ul = document.createElement("ul");
+    (items || []).forEach(function (m) { var li = document.createElement("li"); li.textContent = String(m); ul.appendChild(li); });
+    return ul;
+  }
+  function renderChange(d) {
+    var card = document.createElement("div");
+    card.className = "draft change"; card.setAttribute("data-change", String(Number(d.id)));
+    var t = document.createElement("div"); t.className = "draft-title"; t.textContent = d.title || "Изменение"; card.appendChild(t);
+    var o = document.createElement("div");
+    if (d.objectId !== null && d.objectId !== undefined) o.appendChild(objLink(d.objectId, String(d.object || "")));
+    else o.textContent = String(d.object || "");
+    card.appendChild(o);
+    (d.warnings || []).forEach(function (x) { var w = document.createElement("div"); w.className = "warn"; w.textContent = String(x); card.appendChild(w); });
+    if ((d.rows || []).length) {
+      var tbl = document.createElement("table"); tbl.className = "data";
+      var head = document.createElement("tr");
+      ["Реквизит", "Было", "Стало"].forEach(function (h) { var th = document.createElement("th"); th.textContent = h; head.appendChild(th); });
+      tbl.appendChild(head);
+      d.rows.forEach(function (r) {
+        var tr = document.createElement("tr");
+        [r.name, r.from, r.to].forEach(function (v) { var td = document.createElement("td"); td.textContent = v == null ? "" : String(v); tr.appendChild(td); });
+        tbl.appendChild(tr);
+      });
+      card.appendChild(tbl);
+    }
+    var dry = d.dry || {}, dl = document.createElement("div"); dl.className = "change-dry";
+    var msgs = dry.messages || [];
+    if (!dry.done) dl.textContent = "Пробный прогон не выполнялся.";
+    else if (dry.ok) dl.textContent = "Пробный прогон: успешно" + (msgs.length ? " (сообщений: " + msgs.length + ")" : "") + ".";
+    else dl.textContent = "Пробный прогон: ошибки" + (dry.stage ? ", этап «" + (DRY_STAGE[dry.stage] || dry.stage) + "»" : "") + " (" + msgs.length + ").";
+    if (dry.done && msgs.length) {
+      var more = document.createElement("span"); more.className = "more"; more.textContent = " Сообщения";
+      var list = textList(msgs); list.className = dry.ok ? "hidden" : "";
+      more.onclick = function () { list.classList.toggle("hidden"); };
+      dl.appendChild(more); dl.appendChild(list);
+    }
+    card.appendChild(dl);
+    var st = document.createElement("div"); st.className = "change-status change-result";
+    st.textContent = "Статус: " + (CHANGE_STATUS[d.status] || String(d.status || "")) + (d.result ? ". " + d.result : "");
+    if ((d.messages || []).length) st.appendChild(textList(d.messages));
+    card.appendChild(st);
+    if (d.canExec) {
+      var bar = document.createElement("div"); bar.className = "draft-bar";
+      var ok = document.createElement("a"); ok.className = "report"; ok.href = "#iia/change/" + Number(d.id) + "/exec"; ok.textContent = "Выполнить";
+      var no = document.createElement("a"); no.className = "more"; no.href = "#iia/change/" + Number(d.id) + "/reject"; no.textContent = "Отклонить";
+      bar.appendChild(ok); bar.appendChild(no); card.appendChild(bar);
+    }
+    return card;
+  }
+  // Пакет 1С после «Выполнить»/«Отклонить»: карточка заменяется обновлённой (статус, итог, кнопки).
+  function updateChange(c) {
+    if (!c) return;
+    var old = feed.querySelector(".change[data-change='" + Number(c.id) + "']");
+    if (!old) return;
+    if (c.gone) {
+      // Карточки больше нет в 1С: кнопки снимаются, блокировка .busy тоже, причина - в статусе.
+      Array.prototype.forEach.call(old.querySelectorAll("a[href^='#iia/change/']"), function (a) { a.parentNode.removeChild(a); });
+      Array.prototype.forEach.call(old.querySelectorAll(".busy"), function (b) { b.classList.remove("busy"); });
+      var st = document.createElement("div"); st.className = "change-status"; st.textContent = String(c.result || "");
+      old.appendChild(st);
+      return;
+    }
+    old.parentNode.replaceChild(renderChange(c), old);
+  }
+
+  function showCapabilities(p) {
+    welcome.textContent = "";
+    var text = document.createElement("p"); text.textContent = p.text || "Возможности уточняются администратором."; welcome.appendChild(text);
+    var questions = Array.isArray(p.questions) ? p.questions.slice(0, 3) : [];
+    if (!questions.length) return;
+    var examples = document.createElement("div"); examples.className = "examples";
+    questions.forEach(function (question) {
+      if (typeof question !== "string" || !question.trim()) return;
+      var button = document.createElement("button"); button.type = "button"; button.className = "example";
+      button.textContent = question;
+      button.onclick = function () { input.value = question; input.focus(); };
+      examples.appendChild(button);
+    });
+    welcome.appendChild(examples);
+  }
+
+  function append(p) {
+    counter++;
+    // «Перегенерировать» и «Продолжить» есть только у последнего ответа.
+    if (p.role === "user" || p.role === "assistant") {
+      Array.prototype.forEach.call(feed.querySelectorAll(".last-only"), function (x) { x.parentNode.removeChild(x); });
+    }
+    var div = document.createElement("div");
+    div.className = "msg " + (p.role === "user" ? "user" : (p.role === "error" ? "error" : (p.role === "context" ? "context" : "assistant")));
+    var role = document.createElement("div");
+    role.className = "role";
+    role.textContent = p.role === "user" ? "Вы" : (p.role === "error" ? "Ошибка" : (p.role === "context" ? "Объект" : "Ассистент"));
+    if (p.time) { var tm = document.createElement("span"); tm.className = "time"; tm.textContent = p.time; role.appendChild(tm); }
+    div.appendChild(role);
+    if (p.warning) {
+      var w = document.createElement("div");
+      w.className = "warn";
+      w.textContent = p.warning;
+      div.appendChild(w);
+    }
+    var body = document.createElement("div");
+    // Изображения: только что отправленные - из ленты ввода, восстановленной реплики - из 1С.
+    var shots = p.role === "user" ? (p.images && p.images.length ? p.images : (p.shots ? sentShots : [])) : [];
+    if (shots.length) {
+      var sh = document.createElement("div");
+      sh.className = "shots";
+      shots.forEach(function (u) { var im = document.createElement("img"); im.src = u; sh.appendChild(im); });
+      if (shots === sentShots) sentShots = [];
+      div.appendChild(sh);
+    }
+    if (p.role === "user" && p.docs && p.docs.length) {
+      var dl = document.createElement("div");
+      dl.className = "docs";
+      p.docs.forEach(function (n, i) { dl.appendChild(docChip(n, p.files ? p.files[i] : null)); });
+      div.appendChild(dl);
+    }
+    if (p.role === "assistant") {
+      curLinks = p.links || [];
+      try { body.innerHTML = markdown(p.text); } finally { curLinks = []; }
+      linkObjects(body, p.objects);
+    }
+    else { body.textContent = p.text; if (p.role === "user") linkObjects(body, p.objects); }
+    if (p.role === "user") div.setAttribute("data-q", String(p.text || "").slice(0, 80));
+    if (p.role === "assistant" && p.stop && STOP_TEXT[p.stop]) {
+      var sn = document.createElement("div"); sn.className = "warn"; sn.textContent = STOP_TEXT[p.stop]; div.appendChild(sn);
+    }
+    div.appendChild(body);
+    var hasSources = p.role === "assistant" && p.sources && p.sources.length;
+    if (hasSources) renderSources(div, body, p.sources);
+    if (p.role === "assistant") addExcelButtons(body, div);
+    if (p.role === "assistant") renderAnswerFiles(body, div, p.afiles || []);
+    (p.role === "assistant" ? p.configs || [] : []).forEach(function (c) {
+      var line = document.createElement("div"); line.className = "configs";
+      line.appendChild(document.createTextNode("Сохранён вариант «" + String(c.title || "") + "» (" + (c.created ? "создан" : "обновлён") + "). "));
+      var open = document.createElement("a"); open.className = "report"; open.href = "#iia/open/" + Number(c.id); open.textContent = "Открыть вариант";
+      line.appendChild(open); div.appendChild(line);
+    });
+    if (p.reports && p.reports.length && !hasSources) {
+      var rep = document.createElement("div");
+      rep.className = "reports";
+      p.reports.forEach(function (r) {
+        var source = document.createElement("div");
+        if (r.details) { var details = document.createElement("div"); details.textContent = r.details; source.appendChild(details); }
+        source.appendChild(objLink(r.id, "Открыть отчёт: " + r.title, "report")); rep.appendChild(source);
+      });
+      div.appendChild(rep);
+    }
+    (p.charts || []).forEach(function (c) { div.appendChild(renderChart(c)); });
+    (p.drafts || []).forEach(function (d) { div.appendChild(renderDraft(d)); });
+    (p.changes || []).forEach(function (d) { div.appendChild(renderChange(d)); });
+    (p.forms || []).forEach(function (f) {
+      var box = document.createElement("div"); box.className = "formshot";
+      var head = document.createElement("div"); head.className = "fs-title";
+      head.textContent = "Показать в форме" + (f.title ? ": " + f.title : "");
+      box.appendChild(head);
+      var bar = document.createElement("div"); bar.className = "fs-bar";
+      function liveBtn(mode, text) {
+        var a = document.createElement("a"); a.className = "report"; a.href = "#iia/live/" + Number(f.id) + "/" + mode;
+        a.textContent = text; bar.appendChild(a);
+      }
+      if (f.current) liveBtn("cur", "Этот объект");
+      liveBtn("new", "Новый");
+      if (f.pick) liveBtn("pick", "Выбрать из списка");
+      box.appendChild(bar);
+      div.appendChild(box);
+    });
+    (p.tables || []).forEach(function (t) { div.appendChild(dataTable(t)); });
+    if (p.role === "assistant" && p.steps && p.steps.length) div.appendChild(renderTrace(p.steps));
+    if (p.role === "assistant") { renderDiagrams(body); renderSuggest(body, div); renderDetails(body); }
+    if (p.role === "assistant") {
+      var msg = Math.max(0, Math.floor(Number(p.msg) || 0));
+      var a = document.createElement("div");
+      a.className = "actions";
+      actionLink(a, "#iia/feedback/up/" + msg, "Полезно");
+      actionLink(a, "#iia/feedback/down/" + msg, "Неверно");
+      actionLink(a, "#iia/copy/" + counter, "Скопировать");
+      if (p.canRegenerate && msg > 0) actionLink(a, "#iia/regen/" + msg, "Перегенерировать", "last-only");
+      if (p.canContinue && msg > 0) actionLink(a, "#iia/continue/" + msg, "Продолжить", "last-only");
+      div.appendChild(a);
+      div.setAttribute("data-text", plainAnswer(p.text));
+      if (msg > 0) div.setAttribute("data-msg", String(msg));
+      div.id = "m" + counter;
+    }
+    if (p.role === "error") {
+      var recovery = document.createElement("div"); recovery.className = "actions";
+      var edit = document.createElement("button"); edit.type = "button"; edit.className = "example"; edit.textContent = "Изменить вопрос";
+      edit.onclick = function () { input.value = lastQuestion || input.value; input.focus(); };
+      // Новый диалог идущий ход не останавливает: ответ сохранится в свой диалог.
+      var fresh = document.createElement("a"); fresh.className = "more"; fresh.href = "#iia/new"; fresh.textContent = "Начать новый диалог без старой истории";
+      recovery.appendChild(edit); recovery.appendChild(fresh); div.appendChild(recovery);
+    }
+    feed.appendChild(div);
+    // Лента прокручивается сама: показываем начало нового сообщения.
+    feed.scrollTop = Math.max(0, div.offsetTop - feed.offsetTop - 8);
+  }
+
+  function actionLink(box, href, text, cls) {
+    var x = document.createElement("a"); x.href = href; x.textContent = text;
+    if (cls) x.className = cls;
+    box.appendChild(x);
+  }
+
+  // ---- Ход работы: шаги хода (живой блок во время хода и свёрнутый под ответом) ----
+  var STOP_TEXT = {
+    length: "Ответ оборван: достигнут предел длины ответа модели. Нажмите «Продолжить».",
+    limit: "Ответ сокращён: исчерпан лимит шагов или времени хода.",
+    stopped: "Ход остановлен. Выполненные шаги - в «Ходе работы».",
+    error: "Ход прерван ошибкой. Выполненные шаги - в «Ходе работы»."
+  };
+  function secText(ms) { return String(Math.round((Number(ms) || 0) / 100) / 10).replace(".", ",") + "\u00A0с"; }
+  function stepsWord(n) {
+    var m10 = n % 10, m100 = n % 100;
+    if (m10 === 1 && m100 !== 11) return "шаг";
+    if (m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14)) return "шага";
+    return "шагов";
+  }
+  function stepOk(s) { return s.result === "OK" || s.result === "" || s.result === null || s.result === undefined; }
+  function stepLine(s) {
+    var li = document.createElement("li");
+    if (!stepOk(s)) li.className = "err";
+    li.appendChild(document.createTextNode(Number(s.n) + ". " + String(s.title || "")));
+    var meta = [];
+    if (!stepOk(s)) meta.push(String(s.result));
+    if (Number(s.rows) > 0) meta.push("строк: " + Number(s.rows));
+    if (Number(s.ms) > 0) meta.push(secText(s.ms));
+    if (Number(s.tokens) > 0) meta.push("токенов: " + Number(s.tokens));
+    var det = document.createElement("span"); det.className = "det";
+    det.textContent = (s.detail ? " \u2014 " + String(s.detail) : "") + (meta.length ? " \u00B7 " + meta.join(" \u00B7 ") : "");
+    li.appendChild(det);
+    return li;
+  }
+  function renderTrace(steps) {
+    var box = document.createElement("div"); box.className = "trace";
+    var total = 0, tokens = 0, errors = 0;
+    steps.forEach(function (s) { total += Number(s.ms) || 0; tokens += Number(s.tokens) || 0; if (!stepOk(s)) errors++; });
+    var head = document.createElement("a"); head.className = "more"; head.href = "#";
+    var label = "Ход работы: " + steps.length + " " + stepsWord(steps.length) + ", " + secText(total) +
+      (tokens ? ", токенов: " + tokens : "") + (errors ? ", ошибок: " + errors : "");
+    var list = document.createElement("ul");
+    steps.forEach(function (s) { list.appendChild(stepLine(s)); });
+    function show(open) { list.className = open ? "" : "hidden"; head.textContent = (open ? "\u25BE " : "\u25B8 ") + label; }
+    show(false);
+    head.onclick = function (e) { e.preventDefault(); e.stopPropagation(); show(list.className === "hidden"); };
+    box.appendChild(head); box.appendChild(list);
+    return box;
+  }
+  var live = document.getElementById("live");
+  function liveStep(p) {
+    if (p.done || !p.step) { if (p.done) { live.textContent = ""; live.className = "hidden"; } return; }
+    var list = live.querySelector("ul");
+    if (!list) { live.textContent = "Ход работы:"; list = document.createElement("ul"); live.appendChild(list); }
+    live.className = "";
+    list.appendChild(stepLine(p.step));
+    live.scrollTop = live.scrollHeight;
+  }
+
+  // ---- Источники: сноски [k] в тексте и список под ответом. Ссылки - только по номеру реестра формы ----
+  function linkCites(root, byN) {
+    var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null, false);
+    var nodes = [], n;
+    while ((n = walker.nextNode())) {
+      var up = n.parentNode;
+      if (up && up.nodeName !== "A" && up.nodeName !== "CODE" && up.nodeName !== "PRE" && /\[\d{1,3}\]/.test(n.nodeValue)) nodes.push(n);
+    }
+    nodes.forEach(function (node) {
+      var re = /\[(\d{1,3})\]/g, text = node.nodeValue, pos = 0, m, frag = document.createDocumentFragment();
+      while ((m = re.exec(text))) {
+        var src = byN[Number(m[1])];
+        if (!src) continue;
+        if (m.index > pos) frag.appendChild(document.createTextNode(text.slice(pos, m.index)));
+        var sup = document.createElement("sup"); sup.className = "cite";
+        if (src.id !== null && src.id !== undefined) sup.appendChild(objLink(src.id, "[" + Number(m[1]) + "]", "cite"));
+        else sup.textContent = "[" + Number(m[1]) + "]";
+        sup.title = String(src.text || "");
+        frag.appendChild(sup);
+        pos = m.index + m[0].length;
+      }
+      if (!pos) return;
+      if (pos < text.length) frag.appendChild(document.createTextNode(text.slice(pos)));
+      node.parentNode.replaceChild(frag, node);
+    });
+  }
+  function renderSources(div, body, list) {
+    var byN = {};
+    list.forEach(function (s) { if (Number(s.n) > 0) byN[Number(s.n)] = s; });
+    linkCites(body, byN);
+    var box = document.createElement("div"); box.className = "sources";
+    var title = document.createElement("div"); title.className = "src-title"; title.textContent = "Источники"; box.appendChild(title);
+    var more = false;
+    list.forEach(function (s) {
+      if (!(Number(s.n) > 0) && !more) {
+        more = true;
+        var mt = document.createElement("div"); mt.className = "src-more"; mt.textContent = "Также использовано:"; box.appendChild(mt);
+      }
+      var row = document.createElement("div"); row.className = "src";
+      if (Number(s.n) > 0) { var num = document.createElement("span"); num.className = "src-n"; num.textContent = "[" + Number(s.n) + "]"; row.appendChild(num); }
+      if (s.id !== null && s.id !== undefined) row.appendChild(objLink(s.id, String(s.text || "")));
+      else row.appendChild(document.createTextNode(String(s.text || "")));
+      if (s.note) { var note = document.createElement("div"); note.className = "note"; note.textContent = String(s.note); row.appendChild(note); }
+      box.appendChild(row);
+    });
+    div.appendChild(box);
+  }
+
+  // ---- «Открыть в Excel» у таблиц из текста ответа: данные уходят в 1С каналом data-cmd ----
+  var XL_ROWS = 2000, XL_COLS = 50, XL_CELL = 1000, XL_JSON = 2 * 1024 * 1024;
+  function cellText(td) {
+    var c = td.cloneNode(true);
+    Array.prototype.forEach.call(c.querySelectorAll("sup.cite"), function (x) { x.parentNode.removeChild(x); });
+    return String(c.textContent || "").replace(/^\s+|\s+$/g, "");
+  }
+  function questionOf(div) {
+    var x = div.previousSibling;
+    while (x && !(x.getAttribute && x.getAttribute("data-q") !== null)) x = x.previousSibling;
+    return x ? x.getAttribute("data-q") : "";
+  }
+  function tableCmd(table, title) {
+    var rows = Array.prototype.slice.call(table.rows);
+    if (!rows.length || rows.length - 1 > XL_ROWS) return null;
+    var columns = Array.prototype.map.call(rows[0].cells, cellText);
+    if (columns.length > XL_COLS) return null;
+    var data = [], tooLong = false;
+    rows.slice(1).forEach(function (tr) {
+      var r = Array.prototype.map.call(tr.cells, cellText).slice(0, XL_COLS);
+      r.forEach(function (v) { if (v.length > XL_CELL) tooLong = true; });
+      data.push(r);
+    });
+    columns.forEach(function (v) { if (v.length > XL_CELL) tooLong = true; });
+    if (tooLong) return null;
+    var json = JSON.stringify({ cmd: "excel", title: String(title || "").slice(0, 150), columns: columns, rows: data });
+    return json.length > XL_JSON ? null : json;
+  }
+  function addExcelButtons(body, div) {
+    Array.prototype.forEach.call(body.querySelectorAll("table.data"), function (table) {
+      var bar = document.createElement("div"); bar.className = "tbl-bar";
+      var a = document.createElement("a"); a.className = "more tbl-tools"; a.href = "#iia/cmd"; a.textContent = "Открыть в Excel";
+      a.addEventListener("click", function (e) {
+        var json = tableCmd(table, questionOf(div));
+        if (!json) { e.preventDefault(); e.stopPropagation(); setStatus("Таблица слишком большая для выгрузки."); return; }
+        document.getElementById("iia-request").setAttribute("data-cmd", json);
+      }, true);
+      bar.appendChild(a);
+      table.parentNode.insertBefore(bar, table.nextSibling);
+    });
+  }
+
+  // Команда с данными для 1С: JSON в атрибуте data-cmd и переход #iia/cmd (если нажатие до 1С не дойдёт,
+  // атрибут подберёт периодическая проверка формы).
+  function sendCmd(obj) {
+    document.getElementById("iia-request").setAttribute("data-cmd", JSON.stringify(obj));
+    document.getElementById("cmdLink").click();
+  }
+
+  // ---- Панель истории диалогов. Данные - только textContent, ссылки - из целых id реестра формы ----
+  var side = document.getElementById("side"), dlgList = document.getElementById("dlgList");
+  var dlgSearch = document.getElementById("dlgSearch");
+  var dialogs = [], serverQuery = "", sideOpen = true, sideKnown = false;
+  function narrow() { return (window.innerWidth || document.documentElement.clientWidth) < 720; }
+  function setSide(open, save) {
+    sideOpen = !!open;
+    side.className = sideOpen ? "" : "closed";
+    if (save) sendCmd({ cmd: "pref", sidebar: sideOpen });
+  }
+  window.iiaToggleSidebar = function () { setSide(!sideOpen, true); return "ok"; };
+  document.getElementById("sideBtn").onclick = function (e) { e.preventDefault(); e.stopPropagation(); setSide(!sideOpen, true); };
+  document.getElementById("sideClose").onclick = function (e) { e.preventDefault(); e.stopPropagation(); setSide(false, true); };
+  dlgSearch.addEventListener("input", renderDialogs);
+  dlgSearch.addEventListener("keydown", function (e) {
+    if (e.key === "Enter" || e.keyCode === 13) { e.preventDefault(); sendCmd({ cmd: "search", text: dlgSearch.value.replace(/^\s+|\s+$/g, "").slice(0, 200) }); }
+    else if (e.key === "Escape" || e.keyCode === 27) { dlgSearch.value = ""; renderDialogs(); }
+  });
+  function renderDialogs() {
+    dlgList.textContent = "";
+    var q = dlgSearch.value.replace(/^\s+|\s+$/g, "").toLowerCase();
+    // Результат серверного поиска (по тексту реплик) показывается целиком; иначе - фильтр по названию.
+    var shown = dialogs.filter(function (d) {
+      return !q || q === serverQuery || String(d.title || "").toLowerCase().indexOf(q) >= 0;
+    });
+    if (!shown.length) {
+      var empty = document.createElement("div"); empty.className = "side-empty";
+      empty.textContent = q ? "Не найдено. Enter - искать и в тексте диалогов." : "Сохранённых диалогов нет.";
+      dlgList.appendChild(empty);
+      return;
+    }
+    shown.forEach(function (d) { dlgList.appendChild(dialogItem(d)); });
+  }
+  function dialogItem(d) {
+    var id = Math.max(0, Math.floor(Number(d.id) || 0)), title = String(d.title || "Без названия");
+    var row = document.createElement("div"); row.className = "dlg" + (d.current ? " current" : "");
+    var t = document.createElement("a"); t.className = "t"; t.href = "#iia/hist/open/" + id; t.title = title;
+    if (d.pinned) { var pin = document.createElement("span"); pin.className = "pin"; pin.textContent = "\u2605"; t.appendChild(pin); }
+    t.appendChild(document.createTextNode(title));
+    t.addEventListener("click", function () { if (narrow()) setSide(false, false); });
+    var tm = document.createElement("div"); tm.className = "d"; tm.textContent = String(d.time || "");
+    var menu = document.createElement("a"); menu.className = "menu"; menu.href = "#"; menu.title = "Действия"; menu.textContent = "\u22EF";
+    var ops = document.createElement("div"); ops.className = "ops hidden";
+    menu.onclick = function (e) { e.preventDefault(); e.stopPropagation(); ops.className = ops.className === "ops" ? "ops hidden" : "ops"; };
+    function opsMenu() {
+      ops.textContent = "";
+      actionLink(ops, "#iia/hist/" + (d.pinned ? "unpin/" : "pin/") + id, d.pinned ? "Открепить" : "Закрепить");
+      var ren = document.createElement("a"); ren.href = "#"; ren.textContent = "Переименовать"; ops.appendChild(ren);
+      ren.onclick = function (e) {
+        e.preventDefault(); e.stopPropagation();
+        var inp = document.createElement("input"); inp.className = "ren"; inp.maxLength = 150; inp.value = title;
+        inp.onkeydown = function (k) {
+          if (k.key === "Enter" || k.keyCode === 13) {
+            k.preventDefault();
+            var v = inp.value.replace(/[\u0000-\u001F\u007F]+/g, " ").replace(/^\s+|\s+$/g, "").slice(0, 150);
+            if (v) sendCmd({ cmd: "rename", id: id, title: v });
+            else renderDialogs();
+          } else if (k.key === "Escape" || k.keyCode === 27) { renderDialogs(); }
+        };
+        row.replaceChild(inp, t); ops.className = "ops hidden"; inp.focus(); inp.select();
+      };
+      var del = document.createElement("a"); del.href = "#"; del.className = "danger"; del.textContent = "Удалить"; ops.appendChild(del);
+      del.onclick = function (e) {
+        e.preventDefault(); e.stopPropagation();
+        ops.textContent = "";
+        ops.appendChild(document.createTextNode("Удалить диалог? "));
+        actionLink(ops, "#iia/hist/delete/" + id, "Да", "danger");
+        var no = document.createElement("a"); no.href = "#"; no.textContent = "Нет"; ops.appendChild(no);
+        no.onclick = function (k) { k.preventDefault(); k.stopPropagation(); opsMenu(); };
+      };
+    }
+    opsMenu();
+    row.appendChild(t); row.appendChild(tm); row.appendChild(menu); row.appendChild(ops);
+    return row;
+  }
+  function showDialogs(p) {
+    dialogs = Array.isArray(p.items) ? p.items : [];
+    serverQuery = String(p.query || "").toLowerCase();
+    renderDialogs();
+  }
+
+  // ---- Файлы ответа (make_file) ----
+  // Карточка встаёт на место маркера [[file:aN]], без маркера - блоком под текстом; в конце - «Все файлы ответа (N)».
+  // Только textContent; команды - целые id реестра 1С, файл собирается в 1С при нажатии.
+  function fileSize(n) {
+    n = Number(n) || 0;
+    return n >= 1048576 ? (n / 1048576).toFixed(1).replace(".", ",") + " МБ" : Math.max(1, Math.round(n / 1024)) + " КБ";
+  }
+  function afileLink(f, mode, text) {
+    var a = document.createElement("a"); a.href = "#iia/afile/" + Number(f.id) + "/" + mode; a.textContent = text; return a;
+  }
+  function afileMeta(f) {
+    var meta = String(f.format || "").toUpperCase();
+    if (f.rows) meta += " · строк: " + Number(f.rows);
+    if (f.size) meta += " · " + fileSize(f.size);
+    return meta;
+  }
+  function afileCard(f) {
+    var c = document.createElement("div"); c.className = "afile";
+    c.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>';
+    var n = document.createElement("span"); n.className = "af-name"; n.textContent = String(f.title || "Файл"); n.title = n.textContent; c.appendChild(n);
+    var m = document.createElement("span"); m.className = "af-meta"; m.textContent = afileMeta(f); c.appendChild(m);
+    c.appendChild(afileLink(f, "save", "Сохранить"));
+    c.appendChild(afileLink(f, "open", "Открыть"));
+    return c;
+  }
+  function renderAnswerFiles(body, div, files) {
+    var rest = [];
+    files.forEach(function (f) {
+      if (!f || f.id == null) return;
+      var slot = body.querySelector(".afile-slot[data-file='" + String(f.file || "").replace(/[^a0-9]/g, "") + "']");
+      if (slot) slot.parentNode.replaceChild(afileCard(f), slot); else rest.push(f);
+    });
+    Array.prototype.forEach.call(body.querySelectorAll(".afile-slot"), function (x) { x.parentNode.removeChild(x); });
+    var valid = files.filter(function (f) { return f && f.id != null; });
+    if (!valid.length) return;
+    var box = document.createElement("div"); box.className = "afiles";
+    rest.forEach(function (f) { box.appendChild(afileCard(f)); });
+    var all = document.createElement("details");
+    var sum = document.createElement("summary"); sum.textContent = "Все файлы ответа (" + valid.length + ")"; all.appendChild(sum);
+    valid.forEach(function (f) {
+      var line = document.createElement("div");
+      line.appendChild(document.createTextNode(String(f.title || "Файл") + " (" + afileMeta(f) + ") "));
+      line.appendChild(afileLink(f, "save", "Сохранить")); line.appendChild(document.createTextNode(" "));
+      line.appendChild(afileLink(f, "open", "Открыть"));
+      all.appendChild(line);
+    });
+    box.appendChild(all);
+    div.appendChild(box);
+  }
+
+  // Файл из базы, выбранный в 1С («Файл из базы»): на странице только id реестра, имя и размер.
+  window.iiaAddBaseFile = function (id, name, size) {
+    if (pendingDocs.length + pendingBase.length >= config.maxDocs) { hint.textContent = "Не больше " + config.maxDocs + " файлов в сообщении."; return; }
+    for (var i = 0; i < pendingBase.length; i++) if (pendingBase[i].id === Number(id)) return;
+    pendingBase.push({ id: Number(id), name: String(name), size: Number(size) || 0 });
+    renderAttachments();
+  };
+  // Текст поля ввода нужен 1С, чтобы предложить файлы объектов из вставленных ссылок.
+  document.getElementById("baseFileBtn").addEventListener("click", function () {
+    document.getElementById("iia-request").setAttribute("data-bfile-text", input.value.slice(0, 8000));
+  }, true);
+
+  // ---- Ввод сообщения и вложения ----
+  function renderAttachments() {
+    attachBox.innerHTML = "";
+    pending.forEach(function (u, i) {
+      var t = document.createElement("div");
+      t.className = "thumb";
+      var im = document.createElement("img"); im.src = u; t.appendChild(im);
+      var x = document.createElement("a"); x.href = "#"; x.textContent = "✕"; x.title = "Убрать";
+      x.onclick = function (e) { e.preventDefault(); e.stopPropagation(); pending.splice(i, 1); renderAttachments(); };
+      t.appendChild(x);
+      attachBox.appendChild(t);
+    });
+    pendingDocs.forEach(function (d, i) {
+      var c = docChip(d.name);
+      var x = document.createElement("a"); x.href = "#"; x.textContent = "✕"; x.title = "Убрать";
+      x.onclick = function (e) { e.preventDefault(); e.stopPropagation(); pendingDocs.splice(i, 1); renderAttachments(); };
+      c.appendChild(x);
+      attachBox.appendChild(c);
+    });
+    pendingBase.forEach(function (d, i) {
+      var c = docChip(d.name); c.className = "doc base"; c.title = "Файл из базы: " + d.name;
+      var x = document.createElement("a"); x.href = "#"; x.textContent = "✕"; x.title = "Убрать";
+      x.onclick = function (e) { e.preventDefault(); e.stopPropagation(); pendingBase.splice(i, 1); renderAttachments(); };
+      c.appendChild(x);
+      attachBox.appendChild(c);
+    });
+    updateHint();
+  }
+
+  // Значок файла; с идентификатором сохранённого файла - ссылка на сохранение файла на диск.
+  function docChip(name, id) {
+    var c = document.createElement(id != null ? "a" : "div");
+    c.className = "doc"; c.title = name;
+    if (id != null) { c.href = "#iia/download/" + Number(id); c.title = "Сохранить файл: " + name; }
+    c.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>';
+    var s = document.createElement("span"); s.textContent = name; c.appendChild(s);
+    return c;
+  }
+
+  // Документ (PDF, текст, Excel), полученный из 1С (скрепка) или перетащенный в чат.
+  function addDoc(name, url, size) {
+    if (!config.textDocs) { hint.textContent = "Файлы в вопросах отключены администратором."; return; }
+    if (!DOC_EXT.test(name)) { hint.textContent = "Файл «" + name + "» не поддерживается: PDF, TXT, MD, CSV, JSON, XML, Excel."; return; }
+    if (PDF_EXT.test(name) && !config.docs) { hint.textContent = "PDF: выбранная модель не принимает документы - выберите модель с документами."; return; }
+    if (size > DOC_MAX_BYTES) { hint.textContent = "Файл «" + name + "» больше 10 МБ."; return; }
+    if (pendingDocs.length + pendingBase.length >= config.maxDocs) { hint.textContent = "Не больше " + config.maxDocs + " файлов в сообщении."; return; }
+    pendingDocs.push({ name: name, url: url });
+    renderAttachments();
+  }
+  window.iiaAddDoc = function (name, url) { addDoc(name, url, Math.round(url.length * 0.75)); };
+
+  // Выбор модели: пометка data-model и нажатие #iia/model; 1С запоминает выбор и присылает новые настройки ввода.
+  function renderModels() {
+    var list = config.models || [];
+    modelSel.className = list.length > 1 ? "model" : "model hidden";
+    modelSel.innerHTML = "";
+    var auto = document.createElement("option"); auto.value = ""; auto.textContent = "Модель: авто"; modelSel.appendChild(auto);
+    list.forEach(function (m) {
+      var o = document.createElement("option"), caps = [];
+      if (m.images) caps.push("изображения");
+      if (m.docs) caps.push("документы");
+      o.value = m.id; o.textContent = m.title + (caps.length ? " (" + caps.join(", ") + ")" : "");
+      modelSel.appendChild(o);
+    });
+    modelSel.value = config.model || "";
+  }
+  modelSel.addEventListener("change", function () {
+    document.getElementById("iia-request").setAttribute("data-model", modelSel.value);
+    document.getElementById("modelLink").click();
+  });
+
+  function updateHint() {
+    var canImages = config.images && config.imageModel;
+    document.getElementById("pasteBtn").className = canImages ? "clip" : "clip hidden";
+    var fileBtn = document.getElementById("fileBtn");
+    fileBtn.className = canImages || config.textDocs ? "clip" : "clip hidden";
+    fileBtn.title = config.textDocs ? (canImages ? "Приложить картинку или документ" : "Приложить документ") : "Приложить картинку из файла";
+    document.getElementById("baseFileBtn").className = config.baseFiles ? "clip" : "clip hidden";
+    if (pendingDocs.length || pendingBase.length) {
+      hint.textContent = "Файлов: " + (pendingDocs.length + pendingBase.length) + " из " + config.maxDocs + ". Текст и Excel проходят маскировку; скриншоты и PDF не проверяются на персональные данные.";
+      return;
+    }
+    if (!config.images) { hint.textContent = config.textDocs ? "Документ: скрепка или перетащите в чат (" + (config.docs ? "PDF, " : "") + "текст, Excel)." : ""; return; }
+    if (!config.imageModel) { hint.textContent = "Скриншоты: ни одна доступная модель не принимает изображения (флажок «Принимает изображения» в подключении)."; return; }
+    hint.textContent = pending.length
+      ? "Скриншотов: " + pending.length + " из " + config.maxImages + ". Скриншоты не проверяются на персональные данные."
+      : "Скриншот: Ctrl+V или кнопка буфера; файл: скрепка или перетащите в чат.";
+  }
+
+  // Подготовка скриншота. Снимок нескольких мониторов (PrtScr на 2-3 экрана) режется на части примерно 16:9 -
+  // иначе при уменьшении до размера, который принимает модель, текст становится нечитаемым.
+  // Каждая часть: не больше 1920 px по длинной стороне, JPEG с качеством от 0,85 до 0,5 - пока не уложится в ~900 КБ.
+  var MAX_SIDE = 1920, MAX_LEN = 1200000, SPLIT_RATIO = 2.2;
+  // Ограничения исходного снимка: больше - отказ, а не попытка ужать до нечитаемого.
+  var SRC_MAX_BYTES = 20 * 1024 * 1024, SRC_MAX_PIXELS = 25000000, SRC_MAX_WIDTH = 11520, SRC_MAX_HEIGHT = 4320;
+
+  function encodePart(img, sx, sy, sw, sh) {
+    var k = Math.min(1, MAX_SIDE / Math.max(sw, sh));
+    var c = document.createElement("canvas");
+    c.width = Math.max(1, Math.round(sw * k)); c.height = Math.max(1, Math.round(sh * k));
+    var g = c.getContext("2d");
+    g.fillStyle = "#fff"; g.fillRect(0, 0, c.width, c.height);
+    g.imageSmoothingEnabled = true;
+    g.drawImage(img, sx, sy, sw, sh, 0, 0, c.width, c.height);
+    var q = 0.85, url = c.toDataURL("image/jpeg", q);
+    while (url.length > MAX_LEN && q > 0.5) { q -= 0.1; url = c.toDataURL("image/jpeg", q); }
+    return url.length > MAX_LEN ? null : url;
+  }
+
+  function canAddImage(size) {
+    if (!config.images) { hint.textContent = "Вставка изображений отключена администратором."; return false; }
+    if (!config.imageModel) { hint.textContent = "Скриншот не добавлен: ни одна доступная модель не принимает изображения. Администратору: флажок «Принимает изображения» в подключении."; return false; }
+    if (pending.length >= config.maxImages) { hint.textContent = "Не больше " + config.maxImages + " изображений в сообщении."; return false; }
+    if (size > SRC_MAX_BYTES) {
+      hint.textContent = "Файл слишком большой (" + Math.round(size / 1048576) + " МБ, допустимо до 20 МБ). Вставьте снимок окна (Alt+PrtScr) или области (Win+Shift+S).";
+      return false;
+    }
+    return true;
+  }
+
+  function addImageFile(file) {
+    if (!canAddImage(file.size)) return;
+    hint.textContent = "Обрабатываю изображение...";
+    var reader = new FileReader();
+    reader.onload = function () { addImageUrl(reader.result); };
+    reader.readAsDataURL(file);
+  }
+
+  // Картинка, полученная 1С из буфера обмена (событие формы или скрепка).
+  window.iiaAddImage = function (url) {
+    if (!canAddImage(Math.round(url.length * 0.75))) return;
+    hint.textContent = "Обрабатываю изображение...";
+    addImageUrl(url);
+  };
+  window.iiaHint = function (text) { hint.textContent = text; };
+
+  function addImageUrl(src) {
+      var img = new Image();
+      img.onerror = function () { hint.textContent = "Не удалось прочитать изображение."; };
+      img.onload = function () {
+        var w = img.width, h = img.height, parts = 1;
+        if (w * h > SRC_MAX_PIXELS || w > SRC_MAX_WIDTH || h > SRC_MAX_HEIGHT) {
+          hint.textContent = "Снимок слишком большой (" + w + "x" + h + " px; допустимо до 11520x4320 и 25 Мпикс). Вставьте снимок окна (Alt+PrtScr) или области (Win+Shift+S).";
+          return;
+        }
+        if (w / h > SPLIT_RATIO) parts = Math.max(2, Math.round((w / h) / (16 / 9)));
+        if (pending.length + parts > config.maxImages) {
+          hint.textContent = "Снимок на " + parts + " экрана не помещается: не больше " + config.maxImages + " изображений в сообщении.";
+          return;
+        }
+        var step = Math.ceil(w / parts), added = 0;
+        for (var i = 0; i < parts; i++) {
+          var sx = i * step, sw = Math.min(step, w - sx);
+          var url = encodePart(img, sx, 0, sw, h);
+          if (url) { pending.push(url); added++; }
+        }
+        renderAttachments();
+        if (!added) hint.textContent = "Изображение слишком большое.";
+        else if (parts > 1) hint.textContent = "Широкий снимок разделён на " + parts + " части - по экранам. Скриншоты не проверяются на персональные данные.";
+      };
+      img.src = src;
+  }
+
+  // Ctrl+V. Текст вставляет сама страница. Картинку окно 1С странице не отдаёт (события paste нет или оно пустое) -
+  // тогда просим 1С прочитать буфер средствами платформы: ссылкой #iia/paste/auto и пометкой data-paste
+  // (если нажатие ссылки до 1С не дойдёт, пометку подберёт периодическая проверка формы).
+  var pasteSeen = false;
+  function requestNativePaste() {
+    if (!config.images || !config.imageModel) return;
+    document.getElementById("iia-request").setAttribute("data-paste", "1");
+    document.getElementById("autoPaste").click();
+  }
+  input.addEventListener("keydown", function (e) {
+    var isPaste = (e.ctrlKey || e.metaKey) && e.keyCode === 86 || e.shiftKey && e.keyCode === 45;
+    if (!isPaste) return;
+    pasteSeen = false;
+    setTimeout(function () { if (!pasteSeen) requestNativePaste(); }, 200);
+  });
+  input.addEventListener("paste", function (e) {
+    pasteSeen = true;
+    var items = (e.clipboardData && e.clipboardData.items) || [];
+    for (var i = 0; i < items.length; i++) {
+      if (items[i].kind === "file" && /^image\//.test(items[i].type)) { e.preventDefault(); addImageFile(items[i].getAsFile()); return; }
+    }
+    if (!items.length) requestNativePaste();
+  });
+  document.addEventListener("dragover", function (e) { e.preventDefault(); });
+  document.addEventListener("drop", function (e) {
+    e.preventDefault();
+    var files = (e.dataTransfer && e.dataTransfer.files) || [];
+    for (var i = 0; i < files.length; i++) {
+      if (/^image\//.test(files[i].type)) addImageFile(files[i]);
+      else if (DOC_EXT.test(files[i].name)) addDocFile(files[i]);
+    }
+  });
+  function addDocFile(file) {
+    if (!config.textDocs || (PDF_EXT.test(file.name) && !config.docs) || file.size > DOC_MAX_BYTES) { addDoc(file.name, "", file.size); return; }
+    var reader = new FileReader();
+    reader.onload = function () { addDoc(file.name, reader.result, file.size); };
+    reader.readAsDataURL(file);
+  }
+
+  // Сообщение кладётся в скрытое поле с пометкой data-pending="1". 1С забирает его по нажатию #iia/send
+  // или, если программное нажатие до 1С не дошло (Enter с клавиатуры), - периодической проверкой пометки.
+  // Во время хода ввод не блокируется: 1С ставит сообщение в очередь. Файлы в очереди не хранятся.
+  function queueMessage() {
+    if (!input.value.trim() && !pending.length && !pendingDocs.length && !pendingBase.length) return false;
+    if (busy && (pending.length || pendingDocs.length || pendingBase.length)) { hint.textContent = "Файлы можно приложить после ответа ассистента."; return false; }
+    outbox.value = JSON.stringify({ text: input.value, images: pending.slice(0), docs: pendingDocs.slice(0),
+      bfiles: pendingBase.map(function (b) { return b.id; }) });
+    outbox.setAttribute("data-pending", "1");
+    return true;
+  }
+
+  input.addEventListener("keydown", function (e) {
+    var enter = e.key === "Enter" || e.keyCode === 13;
+    if (enter && !e.shiftKey) { e.preventDefault(); if (queueMessage()) sendBtn.click(); }
+  });
+
+  sendBtn.addEventListener("click", function () {
+    if (outbox.getAttribute("data-pending") !== "1") queueMessage();
+  });
+
+  // Статус хода с таймером: сколько идёт текущий шаг и весь ход - видно, что агент работает, а не завис.
+  var statusText = "", stepSince = 0, turnSince = 0;
+  function mmss(ms) { var s = Math.floor(ms / 1000); return Math.floor(s / 60) + ":" + ("0" + (s % 60)).slice(-2); }
+  function renderStatus() {
+    if (!busy || !statusText) { statusLine.textContent = statusText; return; }
+    var now = Date.now(), text = statusText + "... " + mmss(now - stepSince);
+    if (stepSince - turnSince > 1000) text += " (всего " + mmss(now - turnSince) + ")";
+    statusLine.textContent = text;
+  }
+  function setStatus(text) {
+    text = (text || "").replace(/\.\.\.$/, "");
+    if (text !== statusText) { statusText = text; stepSince = Date.now(); }
+    renderStatus();
+  }
+  setInterval(renderStatus, 1000);
+
+  // Активный ход управляет только кнопкой «Стоп» и таймером: отправка доступна всегда.
+  function setBusy(v) {
+    if (!!v && !busy) turnSince = stepSince = Date.now();
+    busy = !!v;
+    if (!busy) { live.textContent = ""; live.className = "hidden"; }
+    stopBtn.className = "btn" + (busy ? "" : " off");
+  }
+
+  // Ждущие сообщения: пузырь с «Отменить» (#iia/unqueue/<id>), у отложенного - причина и «Отправить»
+  // (#iia/sendqueued/<id>). Идентификатор - UUID записи очереди, текст - только textContent.
+  var queueBox = document.getElementById("queue");
+  var UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  function queuedNode(id) { return UUID_RE.test(id || "") ? document.getElementById("q-" + id) : null; }
+  function renderQueueState(div, id, held, reason) {
+    var state = div.querySelector(".qstate");
+    state.textContent = "";
+    var label = document.createElement("span");
+    label.textContent = held ? ("Отложено" + (reason ? ": " + reason : "")) : "Ожидание очереди";
+    state.appendChild(label);
+    if (held) {
+      var send = document.createElement("a"); send.href = "#iia/sendqueued/" + id; send.textContent = "Отправить";
+      state.appendChild(send);
+    }
+    var cancel = document.createElement("a"); cancel.href = "#iia/unqueue/" + id; cancel.textContent = "Отменить";
+    state.appendChild(cancel);
+  }
+  function queued(p) {
+    if (!UUID_RE.test(p.id || "") || queuedNode(p.id)) return;
+    var div = document.createElement("div"); div.className = "msg user queued"; div.id = "q-" + p.id;
+    var body = document.createElement("div"); body.className = "qtext"; body.textContent = p.text || "";
+    var state = document.createElement("div"); state.className = "qstate";
+    div.appendChild(body); div.appendChild(state);
+    renderQueueState(div, p.id, !!p.held, p.reason || "");
+    queueBox.appendChild(div);
+    queueBox.scrollTop = queueBox.scrollHeight;
+  }
+  function queueHeld(p) {
+    var div = queuedNode(p.id);
+    if (div) renderQueueState(div, p.id, !!p.held, p.reason || "");
+  }
+  function unqueued(p) {
+    var div = queuedNode(p.id);
+    if (div) div.parentNode.removeChild(div);
+  }
+  // Текст отменённого или не принятого сообщения возвращается в поле ввода, не затирая набранное.
+  function restoreInput(p) {
+    var text = typeof p.text === "string" ? p.text : "";
+    if (text) input.value = input.value.trim() ? input.value + "\n" + text : text;
+    outbox.value = ""; outbox.removeAttribute("data-pending");
+    if (p.hint) hint.textContent = p.hint;
+    input.focus();
+  }
+
+  function copyMessage(id) {
+    var el = document.getElementById("m" + id);
+    if (!el) return;
+    copyText(el.getAttribute("data-text") || "");
+  }
+
+  // Мост 1С → JS: единственная точка входа, пакет — JSON-строка.
+  window.iiaReceive = function (json) {
+    var p;
+    try { p = JSON.parse(json); } catch (e) { return "bad-json"; }
+    if (p.type === "append") append(p);
+    else if (p.type === "status") setStatus(p.text);
+    else if (p.type === "progress") liveStep(p);
+    else if (p.type === "dialogs") showDialogs(p);
+    else if (p.type === "replace") {
+      var old = feed.querySelector(".msg[data-msg='" + Math.max(0, Math.floor(Number(p.msg) || 0)) + "']");
+      if (old) old.parentNode.removeChild(old);
+    }
+    else if (p.type === "queued") queued(p);
+    else if (p.type === "unqueued") unqueued(p);
+    else if (p.type === "queue-held") queueHeld(p);
+    else if (p.type === "restore-input") restoreInput(p);
+    else if (p.type === "clear") { feed.innerHTML = ""; queueBox.innerHTML = ""; live.textContent = ""; live.className = "hidden"; setStatus(""); lastQuestion = ""; input.value = ""; pending = []; sentShots = []; pendingDocs = []; pendingBase = []; outbox.value = ""; outbox.removeAttribute("data-pending"); renderAttachments(); }
+    else if (p.type === "capabilities") showCapabilities(p);
+    else if (p.type === "config") {
+      config.images = !!p.images; config.imageModel = p.imageModel !== false; if (p.maxImages) config.maxImages = p.maxImages;
+      config.docs = !!p.docs; config.textDocs = !!p.textDocs; config.baseFiles = !!p.baseFiles; if (p.maxDocs) config.maxDocs = p.maxDocs;
+      config.models = p.models || []; config.model = p.model || "";
+      // Состояние панели истории - только при открытии чата; на узком окне панель поверх ленты, сначала скрыта.
+      if (typeof p.sidebar === "boolean" && !sideKnown) { sideKnown = true; setSide(p.sidebar && !narrow(), false); }
+      // Без модели с документами убираются только PDF; без разрешения файлов - все файлы.
+      var before = pendingDocs.length + pendingBase.length;
+      pendingDocs = pendingDocs.filter(function (d) { return config.textDocs && (config.docs || !PDF_EXT.test(d.name)); });
+      if (!config.textDocs) pendingBase = [];
+      var dropped = pendingDocs.length + pendingBase.length < before;
+      renderModels(); renderAttachments();
+      if (dropped) hint.textContent = config.textDocs ? "Выбранная модель не принимает PDF - PDF-файлы убраны." : "Файлы в вопросах отключены - файлы убраны.";
+    }
+    else if (p.type === "busy") setBusy(p.value);
+    else if (p.type === "accepted") {
+      // Сообщение принято 1С: очищаем ввод, вложения покажем в ленте вместе с вопросом.
+      lastQuestion = input.value; sentShots = pending.slice(0); pending = []; pendingDocs = []; pendingBase = []; input.value = ""; outbox.value = ""; outbox.removeAttribute("data-pending"); renderAttachments();
+    }
+    else if (p.type === "focus") input.focus();
+    else if (p.type === "change") updateChange(p.card);
+    return "ok";
+  };
+
+  // Копирование обрабатывается в JS; остальные команды #iia/... уходят в 1С через событие ПриНажатии.
+  document.addEventListener("click", function (e) {
+    var a = e.target && e.target.closest ? e.target.closest("a") : null;
+    if (!a) return;
+    var href = a.getAttribute("href") || "";
+    var m = /^#iia\/copy\/(\d+)$/.exec(href);
+    if (m) { copyMessage(m[1]); }
+    // Кнопки карточки изменения блокируются до ответа 1С (повторный клик не уходит; сервер всё равно защищён).
+    if (/^#iia\/change\/\d+\/(exec|reject)$/.test(href) && a.parentNode && a.parentNode.classList) {
+      if (a.parentNode.classList.contains("busy")) { e.preventDefault(); e.stopPropagation(); return; }
+      setTimeout(function () { a.parentNode.classList.add("busy"); }, 0);
+    }
+  }, true);
+
+  window.iiaReady = true;
+})();
+</script>
+</body>
+</html>
