@@ -2,6 +2,7 @@
 """Local OpenAI chat HTTP -> ACP v1 stdio bridge. Python stdlib only."""
 from __future__ import annotations
 import argparse
+import base64
 import contextlib
 import ctypes
 import hashlib
@@ -58,8 +59,9 @@ OPENCODE_PERMISSIONS = ('{"autoupdate":false,"snapshot":false,"default_agent":"b
 
 # Agents the bridge knows without a config file; /v1/models lists the installed ones.
 DEFAULT_PROFILES = {
-    "claude": {"title": "Claude Code", "command": "claude-agent-acp", "args": [], "adapter": "claude"},
-    "codex": {"title": "Codex", "command": "codex-acp", "args": []},
+    # Claude Code and Codex have no ACP mode: the bridge drives their CLI in print mode itself.
+    "claude": {"title": "Claude Code", "command": "claude", "args": [], "adapter": "claude-cli"},
+    "codex": {"title": "Codex", "command": "codex", "args": [], "adapter": "codex-cli"},
     "opencode": {"title": "OpenCode", "command": "opencode", "args": ["acp"],
                  "env": {"OPENCODE_CONFIG_CONTENT": OPENCODE_PERMISSIONS}},
     "qwen": {"title": "Qwen Code", "command": "qwen", "args": ["--acp"]},
@@ -72,7 +74,7 @@ DEFAULT_PROFILES = {
 
 def validate_config(config):
     defaults = dict(host="127.0.0.1", port=18765, tokenEnv="IIA_ACP_TOKEN", timeoutSeconds=120,
-                    maxPayloadBytes=1048576, maxOutputBytes=2097152, maxParallel=2)
+                    maxPayloadBytes=16777216, maxOutputBytes=2097152, maxParallel=2)
     if not isinstance(config, dict) or set(config) - (set(defaults) | {"profiles"}):
         raise BridgeError("invalid_config", 500)
     result = {**defaults, **config}
@@ -92,9 +94,11 @@ def validate_config(config):
     for name, profile in profiles.items():
         if not isinstance(name, str) or not re.fullmatch(r"[a-z0-9_-]{1,64}", name):
             raise BridgeError("invalid_config", 500)
-        if not isinstance(profile, dict) or set(profile) - {"title", "command", "args", "cwd", "env", "adapter"}:
+        if not isinstance(profile, dict) or set(profile) - {"title", "command", "args", "cwd", "env", "adapter", "model"}:
             raise BridgeError("invalid_config", 500)
-        if profile.get("adapter", "generic") not in ("generic", "claude"):
+        if profile.get("adapter", "generic") not in ("generic", "claude", *CLI_ADAPTERS):
+            raise BridgeError("invalid_config", 500)
+        if "model" in profile and (profile.get("adapter") not in CLI_ADAPTERS or not isinstance(profile["model"], str) or not MODEL_NAME.fullmatch(profile["model"])):
             raise BridgeError("invalid_config", 500)
         if not isinstance(profile.get("title", name), str):
             raise BridgeError("invalid_config", 500)
@@ -182,15 +186,23 @@ def validate_request(body, config):
     messages = body.get("messages")
     if not isinstance(messages, list) or not messages or len(messages) > 1000:
         raise BridgeError("invalid_messages", 400)
-    normalized = []
+    normalized, images = [], []
     for message in messages:
         if not isinstance(message, dict) or message.get("role") not in {"system", "user", "assistant", "tool", "developer"} or set(message) - {"role", "content", "tool_calls", "tool_call_id", "name"}:
             raise BridgeError("invalid_messages", 400)
         content = message.get("content")
         if isinstance(content, list):
-            if not all(isinstance(i, dict) and set(i) <= {"type", "text"} and i.get("type") == "text" and isinstance(i.get("text"), str) for i in content):
-                raise BridgeError("text_only", 400)
-            content = "\n".join(i["text"] for i in content)
+            texts = []
+            for part in content:
+                if isinstance(part, dict) and set(part) <= {"type", "text"} and part.get("type") == "text" and isinstance(part.get("text"), str):
+                    texts.append(part["text"])
+                elif message["role"] == "user" and isinstance(part, dict) and set(part) == {"type", "image_url"} and part["type"] == "image_url":
+                    # The image goes to the agent as an ACP image block; the JSON keeps its [image N] marker.
+                    images.append(image_block(part["image_url"]))
+                    texts.append("[image " + str(len(images)) + "]")
+                else:
+                    raise BridgeError("text_only", 400)
+            content = "\n".join(texts)
         if content is not None and not isinstance(content, str):
             raise BridgeError("text_only", 400)
         if content is None and not (message["role"] == "assistant" and message.get("tool_calls")):
@@ -204,6 +216,8 @@ def validate_request(body, config):
                 if not isinstance(call, dict) or call.get("type") != "function" or not isinstance(call.get("id"), str) or not isinstance(call.get("function"), dict) or not all(isinstance(call["function"].get(k), str) for k in ("name", "arguments")):
                     raise BridgeError("invalid_messages", 400)
         normalized.append({**message, "content": content})
+    if len(images) > MAX_IMAGES:
+        raise BridgeError("too_many_images", 400)
     tools = body.get("tools", [])
     if not isinstance(tools, list) or len(tools) > 128:
         raise BridgeError("invalid_tools", 400)
@@ -220,7 +234,24 @@ def validate_request(body, config):
     choice = body.get("tool_choice", "auto")
     if choice not in ("auto", "none"):
         raise BridgeError("tool_choice_not_supported", 400)
-    return model, normalized, [] if choice == "none" else mcp_tools
+    return model, normalized, [] if choice == "none" else mcp_tools, images
+
+
+IMAGE_TYPES = {"image/png", "image/jpeg", "image/gif", "image/webp"}
+MAX_IMAGES = 10
+
+
+def image_block(image_url):
+    """ACP image content block from an OpenAI image_url part: only an inline base64 data URL is accepted."""
+    url = image_url.get("url") if isinstance(image_url, dict) and set(image_url) <= {"url", "detail"} else None
+    found = re.fullmatch(r"data:(image/[a-z]+);base64,([A-Za-z0-9+/]+={0,2})", url) if isinstance(url, str) else None
+    if not found or found.group(1) not in IMAGE_TYPES:
+        raise BridgeError("invalid_image", 400)
+    try:
+        base64.b64decode(found.group(2), validate=True)
+    except ValueError:
+        raise BridgeError("invalid_image", 400) from None
+    return {"type": "image", "mimeType": found.group(1), "data": found.group(2)}
 
 
 class ProcessTree:
@@ -307,6 +338,8 @@ class ProcessTree:
 
 
 class AcpConnection:
+    jsonrpc = True
+
     def __init__(self, tree, limit, deadline, handoff):
         self.tree, self.limit, self.deadline, self.handoff = tree, limit, deadline, handoff
         self.events, self.lock = queue.Queue(maxsize=128), threading.Lock()
@@ -338,7 +371,7 @@ class AcpConnection:
                     if not data.endswith(b"\n"):
                         raise ValueError()
                     message = decode(data)
-                    if not isinstance(message, dict) or message.get("jsonrpc") != "2.0":
+                    if not isinstance(message, dict) or (self.jsonrpc and message.get("jsonrpc") != "2.0"):
                         raise ValueError()
                     self.events.put(message, timeout=.2)
         except queue.Full:
@@ -357,6 +390,9 @@ class AcpConnection:
             while True:
                 data = self.outgoing.get()
                 if data is None:
+                    return
+                if data == b"":  # end of input: a CLI agent reads its prompt to EOF
+                    self.tree.process.stdin.close()
                     return
                 view = memoryview(data)
                 while view:
@@ -436,6 +472,208 @@ class AcpConnection:
             self.outgoing.put_nowait(None)
         for thread in self.readers:
             thread.join(timeout=1)
+
+
+class CliConnection(AcpConnection):
+    """A CLI agent in print mode: the prompt goes to stdin once, stdout is a stream of JSON events."""
+    jsonrpc = False
+
+    def send_raw(self, data):
+        self.outgoing.put_nowait(data)
+        self.outgoing.put_nowait(b"")
+
+    def event(self):
+        """The next stdout event; None once a function call was handed off."""
+        while True:
+            if self.failure:
+                raise BridgeError(self.failure)
+            if self.handoff.called.is_set():
+                return None
+            remaining = self.deadline - time.monotonic()
+            if remaining <= 0:
+                raise BridgeError("agent_timeout", 504)
+            try:
+                message = self.events.get(timeout=min(.05, remaining))
+            except queue.Empty:
+                continue
+            if message is None:
+                raise BridgeError("agent_disconnected")
+            return message
+
+
+CLI_ADAPTERS = {"claude-cli", "codex-cli"}
+MODEL_NAME = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:/\[\]-]{0,127}")
+IMAGE_NOTE = "The images [image 1] to [image {}] from the JSON are attached in order."
+
+
+def cli_error(status, message):
+    """A fixed code for a failed CLI turn; the agent's own text never leaves the bridge."""
+    text = message.lower() if isinstance(message, str) else ""
+    if status in (401, 403) or any(word in text for word in ("login", "log in", "logged in", "authenticat", "unauthorized", "api key")):
+        return "agent_auth_required"
+    if status == 429 or any(word in text for word in ("usage limit", "rate limit", "quota", "credit", "overloaded", "model")):
+        return "agent_provider_error"
+    return "agent_cli_error"
+
+
+def claude_user_model():
+    """The model chosen in Claude Code settings: the bridge skips user settings, so it passes the model itself."""
+    folder = Path(os.environ.get("CLAUDE_CONFIG_DIR") or Path.home() / ".claude")
+    with contextlib.suppress(OSError, ValueError, AttributeError):
+        model = decode((folder / "settings.json").read_bytes()).get("model")
+        if isinstance(model, str) and MODEL_NAME.fullmatch(model):
+            return model
+    return None
+
+
+def codex_user_settings():
+    """Top-level model and reasoning effort of the Codex config, read without loading the rest of it."""
+    folder = Path(os.environ.get("CODEX_HOME") or Path.home() / ".codex")
+    result = {}
+    with contextlib.suppress(OSError, UnicodeError):
+        for line in (folder / "config.toml").read_text(encoding="utf-8").splitlines():
+            if line.lstrip().startswith("["):
+                break
+            found = re.fullmatch(r'\s*(model|model_reasoning_effort)\s*=\s*"([^"\\]*)"\s*(#.*)?', line)
+            if found and MODEL_NAME.fullmatch(found.group(2)):
+                result[found.group(1)] = found.group(2)
+    return result
+
+
+def token_count(value):
+    return value if type(value) is int and value >= 0 else 0
+
+
+def usage_body(prompt, cached, completion):
+    """OpenAI usage: prompt_tokens includes the cached input."""
+    usage = {"prompt_tokens": prompt, "completion_tokens": completion, "total_tokens": prompt + completion}
+    if cached:
+        usage["prompt_tokens_details"] = {"cached_tokens": cached}
+    return usage
+
+
+class ClaudeCli:
+    """Claude Code in print mode: no built-in tools, no user or project settings, only the iia_functions server."""
+    def __init__(self, profile, temporary, handoff, tools, images):
+        self.images, self.env, self.messages = images, {}, {}
+        self.model = profile.get("model") or claude_user_model()
+        self.args = ["-p", "--input-format", "stream-json", "--output-format", "stream-json", "--verbose",
+                     "--tools", "", "--setting-sources", "", "--strict-mcp-config", "--no-session-persistence",
+                     "--disable-slash-commands"]
+        if tools:
+            # The handoff token goes in a file of the request folder, not in the command line.
+            descriptor = handoff.descriptor()
+            path = Path(temporary) / "iia-mcp.json"
+            path.write_bytes(encode({"mcpServers": {"iia_functions": {"type": "stdio", "command": descriptor["command"], "args": descriptor["args"],
+                                                                      "env": {item["name"]: item["value"] for item in descriptor["env"]}}}}))
+            self.args += ["--mcp-config", str(path), "--allowedTools", "mcp__iia_functions__*"]
+        if self.model:
+            self.args += ["--model", self.model]
+
+    def stdin(self, text):
+        content = [{"type": "text", "text": text}]
+        if self.images:
+            content.append({"type": "text", "text": IMAGE_NOTE.format(len(self.images))})
+            content += [{"type": "image", "source": {"type": "base64", "media_type": block["mimeType"], "data": block["data"]}} for block in self.images]
+        return encode({"type": "user", "message": {"role": "user", "content": content}}) + b"\n"
+
+    def run(self, connection):
+        used = None
+        while True:
+            event = connection.event()
+            if event is None:
+                return None, used
+            kind = event.get("type")
+            if kind == "system" and event.get("subtype") == "init" and isinstance(event.get("model"), str):
+                used = event["model"]
+            elif kind == "assistant":
+                message = event.get("message")
+                # Every content block of one API message repeats its usage: count the message once.
+                if isinstance(message, dict) and isinstance(message.get("usage"), dict):
+                    self.messages[message.get("id") or len(self.messages)] = message["usage"]
+                for block in (message.get("content") if isinstance(message, dict) else None) or []:
+                    if isinstance(block, dict) and block.get("type") == "text" and isinstance(block.get("text"), str):
+                        connection.text.append(block["text"])
+            elif kind == "result":
+                if event.get("is_error") is not False or event.get("subtype") != "success":
+                    raise BridgeError(cli_error(event.get("api_error_status"), event.get("result")))
+                return ("max_tokens" if event.get("stop_reason") == "max_tokens" else "end_turn"), used
+
+    def usage(self):
+        """Tokens of the API calls seen so far; a function call stops the agent before its result event."""
+        items = self.messages.values()
+        cached = sum(token_count(item.get("cache_read_input_tokens")) for item in items)
+        prompt = cached + sum(token_count(item.get("input_tokens")) + token_count(item.get("cache_creation_input_tokens")) for item in items)
+        return usage_body(prompt, cached, sum(token_count(item.get("output_tokens")) for item in items))
+
+
+# Codex tools that act outside the iia_functions server; features unknown to a Codex version are ignored.
+CODEX_DISABLED_FEATURES = ("shell_tool", "unified_exec", "apps", "plugins", "browser_use", "browser_use_external",
+                           "computer_use", "in_app_browser", "multi_agent", "image_generation", "hooks", "view_image",
+                           "skill_search", "skill_mcp_dependency_install", "tool_suggest", "goals", "memories",
+                           "sleep_tool", "code_mode_host", "workspace_dependencies")
+
+
+class CodexCli:
+    """codex exec: user config, rules and session files are skipped, the sandbox is read-only, tools are off."""
+    def __init__(self, profile, temporary, handoff, tools, images):
+        self.images, self.env, self.tokens = images, {}, {}
+        settings = {} if profile.get("model") else codex_user_settings()
+        self.model = profile.get("model") or settings.get("model")
+        self.args = ["exec", "--json", "--skip-git-repo-check", "--ephemeral", "--ignore-user-config", "--ignore-rules",
+                     "--sandbox", "read-only", "--color", "never", "-c", 'approval_policy="never"', "-c", 'web_search="disabled"']
+        for feature in CODEX_DISABLED_FEATURES:
+            self.args += ["-c", "features." + feature + "=false"]
+        if tools:
+            # JSON strings and arrays are valid TOML; the token reaches the server through the environment.
+            descriptor = handoff.descriptor()
+            self.env = {item["name"]: item["value"] for item in descriptor["env"]}
+            self.args += ["-c", "mcp_servers.iia_functions.command=" + json.dumps(descriptor["command"]),
+                          "-c", "mcp_servers.iia_functions.args=" + json.dumps(descriptor["args"]),
+                          "-c", "mcp_servers.iia_functions.env_vars=" + json.dumps(sorted(self.env))]
+        if self.model:
+            self.args += ["-m", self.model]
+        if settings.get("model_reasoning_effort"):
+            self.args += ["-c", "model_reasoning_effort=" + json.dumps(settings["model_reasoning_effort"])]
+        for number, block in enumerate(images, 1):
+            path = Path(temporary) / ("image-" + str(number) + "." + block["mimeType"].split("/")[1])
+            path.write_bytes(base64.b64decode(block["data"]))
+            self.args += ["--image=" + str(path)]
+        self.args += ["--", "-"]
+
+    def stdin(self, text):
+        return (text + ("\n\n" + IMAGE_NOTE.format(len(self.images)) if self.images else "")).encode("utf-8")
+
+    def run(self, connection):
+        failure = None
+        while True:
+            try:
+                event = connection.event()
+            except BridgeError as error:
+                # Codex reports an error event and exits: the last error explains the disconnect.
+                if error.code == "agent_disconnected" and failure is not None:
+                    raise BridgeError(cli_error(None, failure)) from None
+                raise
+            if event is None:
+                return None, self.model
+            kind = event.get("type")
+            item = event.get("item")
+            if kind == "item.completed" and isinstance(item, dict) and item.get("type") == "agent_message" and isinstance(item.get("text"), str):
+                connection.text.append(item["text"])
+            elif kind == "turn.completed":
+                if isinstance(event.get("usage"), dict):
+                    self.tokens = event["usage"]
+                return "end_turn", self.model
+            elif kind == "error":
+                failure = event.get("message") if isinstance(event.get("message"), str) else ""
+            elif kind == "turn.failed":
+                error = event.get("error")
+                raise BridgeError(cli_error(None, error.get("message") if isinstance(error, dict) else failure))
+
+    def usage(self):
+        """Codex reports usage only at the end of the turn; input_tokens includes the cached input."""
+        return usage_body(token_count(self.tokens.get("input_tokens")), token_count(self.tokens.get("cached_input_tokens")),
+                          token_count(self.tokens.get("output_tokens")))
 
 
 class QuietHandler(http.server.BaseHTTPRequestHandler):
@@ -588,6 +826,13 @@ def model_selector(session):
     return None
 
 
+def session_model(session):
+    """The current model an agent without a model selector reports in session/new (ACP unstable models)."""
+    models = session.get("models")
+    current = models.get("currentModelId") if isinstance(models, dict) else None
+    return current if isinstance(current, str) and MODEL_NAME.fullmatch(current) else None
+
+
 def session_params(profile, cwd, handoff, tools):
     params = {"cwd": cwd, "mcpServers": [handoff.descriptor()] if tools else []}
     if profile.get("adapter") == "claude":
@@ -675,7 +920,7 @@ class Bridge:
     def complete(self, body):
         if len(encode(body)) > self.config["maxPayloadBytes"]:
             raise BridgeError("payload_limit", 413)
-        model, messages, tools = validate_request(body, self.config)
+        model, messages, tools, images = validate_request(body, self.config)
         if not self.slots.acquire(blocking=False):
             raise BridgeError("bridge_busy", 429)
         connection, handoff = None, None
@@ -692,28 +937,26 @@ class Bridge:
                         env.pop(key, None)
                     env.update(profile.get("env", {}))
                     handoff = Handoff(tools, self.config["maxPayloadBytes"])
-                    tree = ProcessTree(command, cwd, env)
-                    connection = AcpConnection(tree, self.config["maxOutputBytes"], time.monotonic() + self.config["timeoutSeconds"], handoff)
-                    init = connection.rpc(1, "initialize", {"protocolVersion": 1, "clientCapabilities": {}, "clientInfo": {"name": "iia-acp-bridge", "version": "1.0.0"}})
-                    if init is None or type(init.get("protocolVersion")) is not int or init["protocolVersion"] != 1:
-                        raise BridgeError("unsupported_acp_version")
-                    session = connection.rpc(2, "session/new", session_params(profile, cwd, handoff, tools))
-                    if session is None or not isinstance(session.get("sessionId"), str) or not session["sessionId"]:
-                        raise BridgeError("invalid_agent_output")
-                    connection.session_id = session["sessionId"]
-                    prompt = [{"type": "text", "text": PROMPT_RULES + encode(messages).decode("utf-8")}]
-                    selector = model_selector(session)
-                    if selector is None:
-                        result, used = connection.rpc(3, "session/prompt", {"sessionId": connection.session_id, "prompt": prompt}), None
+                    deadline = time.monotonic() + self.config["timeoutSeconds"]
+                    prompt_text = PROMPT_RULES + encode(messages).decode("utf-8")
+                    adapter = profile.get("adapter", "generic")
+                    usage = usage_body(0, 0, 0)
+                    if adapter in CLI_ADAPTERS:
+                        cli = (ClaudeCli if adapter == "claude-cli" else CodexCli)(profile, temporary, handoff, tools, images)
+                        env.update(cli.env)
+                        connection = CliConnection(ProcessTree(command + cli.args, cwd, env), self.config["maxOutputBytes"], deadline, handoff)
+                        connection.send_raw(cli.stdin(prompt_text))
+                        stop, used = cli.run(connection)
+                        usage = cli.usage()
                     else:
-                        result, used = self.prompt_models(model, connection, handoff, selector, session_params(profile, cwd, handoff, tools), prompt)
+                        connection = AcpConnection(ProcessTree(command, cwd, env), self.config["maxOutputBytes"], deadline, handoff)
+                        stop, used = self.prompt_acp(model, profile, cwd, connection, handoff, tools, images, prompt_text)
                     message = {"role": "assistant", "content": "".join(connection.text)}
                     call = handoff.call
                     if call:
                         message["tool_calls"] = [{"id": "call_" + uuid.uuid4().hex, "type": "function", "function": {"name": call["name"], "arguments": encode(call["arguments"]).decode("utf-8")}}]
                         reason = "tool_calls"
                     else:
-                        stop = result.get("stopReason") if result else None
                         if stop not in {"end_turn", "max_tokens", "max_turn_requests", "refusal", "cancelled"}:
                             raise BridgeError("invalid_agent_output")
                         if stop == "cancelled":
@@ -721,7 +964,7 @@ class Bridge:
                         reason = "length" if stop in {"max_tokens", "max_turn_requests"} else "stop"
                     response = {"id": "chatcmpl-" + uuid.uuid4().hex, "object": "chat.completion", "created": int(time.time()), "model": model,
                                 "choices": [{"index": 0, "message": message, "finish_reason": reason}],
-                                "usage": {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}}
+                                "usage": usage}
                     if used:
                         response["agent_model"] = used
                     return response
@@ -737,9 +980,34 @@ class Bridge:
                 handoff.close()
             self.slots.release()
 
+    def prompt_acp(self, model, profile, cwd, connection, handoff, tools, images, prompt_text):
+        """One ACP turn: (stopReason or None after a function call, the agent model that answered or None)."""
+        init = connection.rpc(1, "initialize", {"protocolVersion": 1, "clientCapabilities": {}, "clientInfo": {"name": "iia-acp-bridge", "version": "1.0.0"}})
+        if init is None or type(init.get("protocolVersion")) is not int or init["protocolVersion"] != 1:
+            raise BridgeError("unsupported_acp_version")
+        # ACP allows image blocks only to an agent that declared promptCapabilities.image.
+        capabilities = init.get("agentCapabilities")
+        prompt_capabilities = capabilities.get("promptCapabilities") if isinstance(capabilities, dict) else None
+        if images and not (isinstance(prompt_capabilities, dict) and prompt_capabilities.get("image") is True):
+            raise BridgeError("agent_images_not_supported", 400)
+        session = connection.rpc(2, "session/new", session_params(profile, cwd, handoff, tools))
+        if session is None or not isinstance(session.get("sessionId"), str) or not session["sessionId"]:
+            raise BridgeError("invalid_agent_output")
+        connection.session_id = session["sessionId"]
+        prompt = [{"type": "text", "text": prompt_text}]
+        if images:
+            prompt.append({"type": "text", "text": "The images [image 1] to [image " + str(len(images)) + "] from the JSON follow in order."})
+            prompt.extend(images)
+        selector = model_selector(session)
+        if selector is None:
+            result, used = connection.rpc(3, "session/prompt", {"sessionId": connection.session_id, "prompt": prompt}), session_model(session)
+        else:
+            result, used = self.prompt_models(model, connection, handoff, selector, session_params(profile, cwd, handoff, tools), prompt)
+        return (result.get("stopReason") if result else None), used
+
     def prompt_models(self, key, connection, handoff, selector, params, prompt):
         """Prompt the agent's models in turn while they refuse; a refused session is replaced with a clean one.
-        Only a model the bridge selected itself is reported: an agent may name a default it does not use."""
+        Returns the model that answered: the selected one or the agent's current one."""
         option, current, values = selector
         request_id = 3
         order = self.model_order(key, current, values)
@@ -764,8 +1032,6 @@ class Bridge:
                     raise
                 request_id += 1
                 continue
-            if value == current:
-                return result, None
             self.model_result(key, value, True)
             return result, value
         raise BridgeError("agent_provider_error")
