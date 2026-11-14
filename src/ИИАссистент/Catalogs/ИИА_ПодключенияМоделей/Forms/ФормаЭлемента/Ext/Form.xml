@@ -25,6 +25,7 @@
 		<Event name="OnCreateAtServer">ПриСозданииНаСервере</Event>
 		<Event name="OnReadAtServer">ПриЧтенииНаСервере</Event>
 		<Event name="AfterWriteAtServer">ПослеЗаписиНаСервере</Event>
+		<Event name="BeforeWriteAtServer">ПередЗаписьюНаСервере</Event>
 	</Events>
 	<ChildItems>
 		<UsualGroup name="ГруппаШапка" id="3">
@@ -128,7 +129,101 @@
 					</InputHint>
 					<ContextMenu name="ПроксиКонтекстноеМеню" id="91"/>
 					<ExtendedTooltip name="ПроксиРасширеннаяПодсказка" id="92"/>
+					<Events>
+						<Event name="OnChange">ПроксиПриИзменении</Event>
+					</Events>
 				</InputField>
+				<UsualGroup name="ГруппаСостояниеПрокси" id="93">
+					<Group>Horizontal</Group>
+					<Representation>None</Representation>
+					<ShowTitle>false</ShowTitle>
+					<ExtendedTooltip name="ГруппаСостояниеПроксиРасширеннаяПодсказка" id="94"/>
+					<ChildItems>
+						<LabelField name="СостояниеПрокси" id="95">
+							<DataPath>СостояниеПрокси</DataPath>
+							<TitleLocation>None</TitleLocation>
+							<ContextMenu name="СостояниеПроксиКонтекстноеМеню" id="96"/>
+							<ExtendedTooltip name="СостояниеПроксиРасширеннаяПодсказка" id="97"/>
+						</LabelField>
+						<LabelDecoration name="НастроитьПрокси1С" id="98">
+							<Title formatted="false">
+								<v8:item>
+									<v8:lang>ru</v8:lang>
+									<v8:content>Настроить прокси 1С</v8:content>
+								</v8:item>
+							</Title>
+							<Hyperlink>true</Hyperlink>
+							<ContextMenu name="НастроитьПрокси1СКонтекстноеМеню" id="99"/>
+							<ExtendedTooltip name="НастроитьПрокси1СРасширеннаяПодсказка" id="100"/>
+							<Events>
+								<Event name="Click">НастроитьПрокси1СНажатие</Event>
+							</Events>
+						</LabelDecoration>
+					</ChildItems>
+				</UsualGroup>
+				<UsualGroup name="ГруппаСвойПрокси" id="101">
+					<Group>Vertical</Group>
+					<Representation>None</Representation>
+					<ShowTitle>false</ShowTitle>
+					<ExtendedTooltip name="ГруппаСвойПроксиРасширеннаяПодсказка" id="102"/>
+					<ChildItems>
+						<InputField name="АдресПрокси" id="103">
+							<DataPath>Объект.АдресПрокси</DataPath>
+							<Title>
+								<v8:item>
+									<v8:lang>ru</v8:lang>
+									<v8:content>Адрес прокси</v8:content>
+								</v8:item>
+							</Title>
+							<ToolTip>
+								<v8:item>
+									<v8:lang>ru</v8:lang>
+									<v8:content>Сервер и порт прокси только для этого подключения. Если оставить пустым, берутся адрес и учётные данные своего прокси из настроек ассистента.</v8:content>
+								</v8:item>
+							</ToolTip>
+							<ToolTipRepresentation>Button</ToolTipRepresentation>
+							<HorizontalStretch>true</HorizontalStretch>
+							<ContextMenu name="АдресПроксиКонтекстноеМеню" id="104"/>
+							<ExtendedTooltip name="АдресПроксиРасширеннаяПодсказка" id="105"/>
+							<Events>
+								<Event name="OnChange">ПроксиПриИзменении</Event>
+							</Events>
+						</InputField>
+						<InputField name="ПользовательПрокси" id="106">
+							<DataPath>ПользовательПрокси</DataPath>
+							<Title>
+								<v8:item>
+									<v8:lang>ru</v8:lang>
+									<v8:content>Пользователь</v8:content>
+								</v8:item>
+							</Title>
+							<Width>30</Width>
+							<HorizontalStretch>false</HorizontalStretch>
+							<InputHint>
+								<v8:item>
+									<v8:lang>ru</v8:lang>
+									<v8:content>пусто — без авторизации</v8:content>
+								</v8:item>
+							</InputHint>
+							<ContextMenu name="ПользовательПроксиКонтекстноеМеню" id="107"/>
+							<ExtendedTooltip name="ПользовательПроксиРасширеннаяПодсказка" id="108"/>
+						</InputField>
+						<InputField name="ПарольПрокси" id="109">
+							<DataPath>ПарольПрокси</DataPath>
+							<Title>
+								<v8:item>
+									<v8:lang>ru</v8:lang>
+									<v8:content>Пароль</v8:content>
+								</v8:item>
+							</Title>
+							<Width>30</Width>
+							<HorizontalStretch>false</HorizontalStretch>
+							<PasswordMode>true</PasswordMode>
+							<ContextMenu name="ПарольПроксиКонтекстноеМеню" id="110"/>
+							<ExtendedTooltip name="ПарольПроксиРасширеннаяПодсказка" id="111"/>
+						</InputField>
+					</ChildItems>
+				</UsualGroup>
 				<InputField name="Модель" id="19">
 					<DataPath>Объект.Модель</DataPath>
 					<Title>
@@ -483,6 +578,51 @@
 				<v8:Type>xs:string</v8:Type>
 				<v8:StringQualifiers>
 					<v8:Length>50</v8:Length>
+					<v8:AllowedLength>Variable</v8:AllowedLength>
+				</v8:StringQualifiers>
+			</Type>
+		</Attribute>
+		<Attribute name="ПользовательПрокси" id="52">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Пользователь прокси</v8:content>
+				</v8:item>
+			</Title>
+			<Type>
+				<v8:Type>xs:string</v8:Type>
+				<v8:StringQualifiers>
+					<v8:Length>200</v8:Length>
+					<v8:AllowedLength>Variable</v8:AllowedLength>
+				</v8:StringQualifiers>
+			</Type>
+		</Attribute>
+		<Attribute name="ПарольПрокси" id="53">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Пароль прокси</v8:content>
+				</v8:item>
+			</Title>
+			<Type>
+				<v8:Type>xs:string</v8:Type>
+				<v8:StringQualifiers>
+					<v8:Length>500</v8:Length>
+					<v8:AllowedLength>Variable</v8:AllowedLength>
+				</v8:StringQualifiers>
+			</Type>
+		</Attribute>
+		<Attribute name="СостояниеПрокси" id="54">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Состояние прокси</v8:content>
+				</v8:item>
+			</Title>
+			<Type>
+				<v8:Type>xs:string</v8:Type>
+				<v8:StringQualifiers>
+					<v8:Length>300</v8:Length>
 					<v8:AllowedLength>Variable</v8:AllowedLength>
 				</v8:StringQualifiers>
 			</Type>

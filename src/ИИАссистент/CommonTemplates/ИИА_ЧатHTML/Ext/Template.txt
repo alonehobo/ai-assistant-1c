@@ -921,7 +921,7 @@
     if (m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14)) return "шага";
     return "шагов";
   }
-  function stepOk(s) { return s.result === "OK" || s.result === "" || s.result === null || s.result === undefined; }
+  function stepOk(s) { return s.result === "OK" || s.result === "" || s.result === "SKIPPED_AT_LIMIT" || s.result === null || s.result === undefined; }
   function stepLine(s) {
     var li = document.createElement("li");
     if (!stepOk(s)) li.className = "err";

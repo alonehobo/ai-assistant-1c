@@ -1,0 +1,678 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<Form xmlns="http://v8.1c.ru/8.3/xcf/logform" xmlns:app="http://v8.1c.ru/8.2/managed-application/core" xmlns:cfg="http://v8.1c.ru/8.1/data/enterprise/current-config" xmlns:dcscor="http://v8.1c.ru/8.1/data-composition-system/core" xmlns:dcsset="http://v8.1c.ru/8.1/data-composition-system/settings" xmlns:ent="http://v8.1c.ru/8.1/data/enterprise" xmlns:lf="http://v8.1c.ru/8.2/managed-application/logform" xmlns:style="http://v8.1c.ru/8.1/data/ui/style" xmlns:sys="http://v8.1c.ru/8.1/data/ui/fonts/system" xmlns:v8="http://v8.1c.ru/8.1/data/core" xmlns:v8ui="http://v8.1c.ru/8.1/data/ui" xmlns:web="http://v8.1c.ru/8.1/data/ui/colors/web" xmlns:win="http://v8.1c.ru/8.1/data/ui/colors/windows" xmlns:xr="http://v8.1c.ru/8.3/xcf/readable" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="2.20">
+	<Title>
+		<v8:item>
+			<v8:lang>ru</v8:lang>
+			<v8:content>Быстрая настройка ИИ-ассистента</v8:content>
+		</v8:item>
+	</Title>
+	<Width>70</Width>
+	<AutoTitle>false</AutoTitle>
+	<CommandBarLocation>Bottom</CommandBarLocation>
+	<AutoCommandBar name="ФормаКоманднаяПанель" id="-1">
+		<HorizontalAlign>Right</HorizontalAlign>
+		<Autofill>false</Autofill>
+		<ChildItems>
+			<Button name="ФормаНазад" id="88">
+				<Type>CommandBarButton</Type>
+				<CommandName>Form.Command.Назад</CommandName>
+				<ExtendedTooltip name="ФормаНазадРасширеннаяПодсказка" id="89"/>
+			</Button>
+			<Button name="ФормаДалее" id="90">
+				<Type>CommandBarButton</Type>
+				<DefaultButton>true</DefaultButton>
+				<CommandName>Form.Command.Далее</CommandName>
+				<ExtendedTooltip name="ФормаДалееРасширеннаяПодсказка" id="91"/>
+			</Button>
+			<Button name="ФормаЗакрыть" id="92">
+				<Type>CommandBarButton</Type>
+				<CommandName>Form.StandardCommand.Close</CommandName>
+				<ExtendedTooltip name="ФормаЗакрытьРасширеннаяПодсказка" id="93"/>
+			</Button>
+		</ChildItems>
+	</AutoCommandBar>
+	<Events>
+		<Event name="OnCreateAtServer">ПриСозданииНаСервере</Event>
+	</Events>
+	<ChildItems>
+		<LabelDecoration name="ДекорацияШаг" id="1">
+			<AutoMaxWidth>false</AutoMaxWidth>
+			<HorizontalStretch>true</HorizontalStretch>
+			<Font ref="style:ВажнаяНадписьШрифт" kind="StyleItem"/>
+			<Title formatted="false">
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Шаг 1 из 5</v8:content>
+				</v8:item>
+			</Title>
+			<ContextMenu name="ДекорацияШагКонтекстноеМеню" id="2"/>
+			<ExtendedTooltip name="ДекорацияШагРасширеннаяПодсказка" id="3"/>
+		</LabelDecoration>
+		<Pages name="Страницы" id="4">
+			<PagesRepresentation>None</PagesRepresentation>
+			<ExtendedTooltip name="СтраницыРасширеннаяПодсказка" id="5"/>
+			<ChildItems>
+				<Page name="СтраницаДанные" id="6">
+					<Title>
+						<v8:item>
+							<v8:lang>ru</v8:lang>
+							<v8:content>Поставляемые данные</v8:content>
+						</v8:item>
+					</Title>
+					<ExtendedTooltip name="СтраницаДанныеРасширеннаяПодсказка" id="7"/>
+					<ChildItems>
+						<LabelDecoration name="ДекорацияДанные" id="8">
+							<AutoMaxWidth>false</AutoMaxWidth>
+							<HorizontalStretch>true</HorizontalStretch>
+							<TextColor>style:ПоясняющийТекст</TextColor>
+							<Title formatted="false">
+								<v8:item>
+									<v8:lang>ru</v8:lang>
+									<v8:content>Мастер создаёт поставляемые подключения к моделям, профили доступа ассистента, карточки отчётов и глоссарий. Добавляются только отсутствующие записи, ваши изменения сохраняются.</v8:content>
+								</v8:item>
+							</Title>
+							<ContextMenu name="ДекорацияДанныеКонтекстноеМеню" id="9"/>
+							<ExtendedTooltip name="ДекорацияДанныеРасширеннаяПодсказка" id="10"/>
+						</LabelDecoration>
+						<InputField name="ПолеСостояниеДанных" id="11">
+							<DataPath>СостояниеДанных</DataPath>
+							<ReadOnly>true</ReadOnly>
+							<TitleLocation>None</TitleLocation>
+							<AutoMaxWidth>false</AutoMaxWidth>
+							<Height>4</Height>
+							<HorizontalStretch>true</HorizontalStretch>
+							<VerticalStretch>false</VerticalStretch>
+							<MultiLine>true</MultiLine>
+							<ContextMenu name="ПолеСостояниеДанныхКонтекстноеМеню" id="12"/>
+							<ExtendedTooltip name="ПолеСостояниеДанныхРасширеннаяПодсказка" id="13"/>
+						</InputField>
+						<Button name="КнопкаЗаполнитьПовторно" id="14">
+							<Type>Hyperlink</Type>
+							<CommandName>Form.Command.ЗаполнитьПовторно</CommandName>
+							<ExtendedTooltip name="КнопкаЗаполнитьПовторноРасширеннаяПодсказка" id="15"/>
+						</Button>
+					</ChildItems>
+				</Page>
+				<Page name="СтраницаМодель" id="16">
+					<Title>
+						<v8:item>
+							<v8:lang>ru</v8:lang>
+							<v8:content>Модель</v8:content>
+						</v8:item>
+					</Title>
+					<ExtendedTooltip name="СтраницаМодельРасширеннаяПодсказка" id="17"/>
+					<ChildItems>
+						<LabelDecoration name="ДекорацияМодель" id="18">
+							<AutoMaxWidth>false</AutoMaxWidth>
+							<HorizontalStretch>true</HorizontalStretch>
+							<TextColor>style:ПоясняющийТекст</TextColor>
+							<Title formatted="false">
+								<v8:item>
+									<v8:lang>ru</v8:lang>
+									<v8:content>Выберите провайдера, укажите модель и ключ API. По кнопке «Далее» подключение будет включено.</v8:content>
+								</v8:item>
+							</Title>
+							<ContextMenu name="ДекорацияМодельКонтекстноеМеню" id="19"/>
+							<ExtendedTooltip name="ДекорацияМодельРасширеннаяПодсказка" id="20"/>
+						</LabelDecoration>
+						<InputField name="ПолеПодключение" id="21">
+							<DataPath>Подключение</DataPath>
+							<Title>
+								<v8:item>
+									<v8:lang>ru</v8:lang>
+									<v8:content>Провайдер</v8:content>
+								</v8:item>
+							</Title>
+							<Width>40</Width>
+							<HorizontalStretch>false</HorizontalStretch>
+							<ContextMenu name="ПолеПодключениеКонтекстноеМеню" id="22"/>
+							<ExtendedTooltip name="ПолеПодключениеРасширеннаяПодсказка" id="23"/>
+							<Events>
+								<Event name="OnChange">ПолеПодключениеПриИзменении</Event>
+							</Events>
+						</InputField>
+						<InputField name="ПолеОписаниеПодключения" id="24">
+							<DataPath>ОписаниеПодключения</DataPath>
+							<ReadOnly>true</ReadOnly>
+							<TitleLocation>None</TitleLocation>
+							<AutoMaxWidth>false</AutoMaxWidth>
+							<Height>3</Height>
+							<HorizontalStretch>true</HorizontalStretch>
+							<VerticalStretch>false</VerticalStretch>
+							<MultiLine>true</MultiLine>
+							<TextColor>style:ПоясняющийТекст</TextColor>
+							<ContextMenu name="ПолеОписаниеПодключенияКонтекстноеМеню" id="25"/>
+							<ExtendedTooltip name="ПолеОписаниеПодключенияРасширеннаяПодсказка" id="26"/>
+						</InputField>
+						<InputField name="ПолеМодель" id="27">
+							<DataPath>Модель</DataPath>
+							<Title>
+								<v8:item>
+									<v8:lang>ru</v8:lang>
+									<v8:content>Модель</v8:content>
+								</v8:item>
+							</Title>
+							<Width>40</Width>
+							<HorizontalStretch>false</HorizontalStretch>
+							<ContextMenu name="ПолеМодельКонтекстноеМеню" id="28"/>
+							<ExtendedTooltip name="ПолеМодельРасширеннаяПодсказка" id="29"/>
+						</InputField>
+						<InputField name="ПолеКлючAPI" id="30">
+							<DataPath>КлючAPI</DataPath>
+							<Title>
+								<v8:item>
+									<v8:lang>ru</v8:lang>
+									<v8:content>Ключ API</v8:content>
+								</v8:item>
+							</Title>
+							<Width>40</Width>
+							<HorizontalStretch>false</HorizontalStretch>
+							<PasswordMode>true</PasswordMode>
+							<ContextMenu name="ПолеКлючAPIКонтекстноеМеню" id="31"/>
+							<ExtendedTooltip name="ПолеКлючAPIРасширеннаяПодсказка" id="32"/>
+						</InputField>
+						<UsualGroup name="ГруппаПроверкаМодели" id="33">
+							<Group>Horizontal</Group>
+							<Representation>None</Representation>
+							<ShowTitle>false</ShowTitle>
+							<ExtendedTooltip name="ГруппаПроверкаМоделиРасширеннаяПодсказка" id="34"/>
+							<ChildItems>
+								<Button name="КнопкаПроверитьМодель" id="35">
+									<Type>Hyperlink</Type>
+									<CommandName>Form.Command.ПроверитьМодель</CommandName>
+									<ExtendedTooltip name="КнопкаПроверитьМодельРасширеннаяПодсказка" id="36"/>
+								</Button>
+								<Button name="КнопкаОткрытьПодключение" id="37">
+									<Type>Hyperlink</Type>
+									<CommandName>Form.Command.ОткрытьПодключение</CommandName>
+									<ExtendedTooltip name="КнопкаОткрытьПодключениеРасширеннаяПодсказка" id="38"/>
+								</Button>
+							</ChildItems>
+						</UsualGroup>
+						<InputField name="ПолеСостояниеПроверкиМодели" id="39">
+							<DataPath>СостояниеПроверкиМодели</DataPath>
+							<ReadOnly>true</ReadOnly>
+							<TitleLocation>None</TitleLocation>
+							<AutoMaxWidth>false</AutoMaxWidth>
+							<Height>3</Height>
+							<HorizontalStretch>true</HorizontalStretch>
+							<VerticalStretch>false</VerticalStretch>
+							<MultiLine>true</MultiLine>
+							<ContextMenu name="ПолеСостояниеПроверкиМоделиКонтекстноеМеню" id="40"/>
+							<ExtendedTooltip name="ПолеСостояниеПроверкиМоделиРасширеннаяПодсказка" id="41"/>
+						</InputField>
+					</ChildItems>
+				</Page>
+				<Page name="СтраницаПользователи" id="42">
+					<Title>
+						<v8:item>
+							<v8:lang>ru</v8:lang>
+							<v8:content>Пользователи</v8:content>
+						</v8:item>
+					</Title>
+					<ExtendedTooltip name="СтраницаПользователиРасширеннаяПодсказка" id="43"/>
+					<ChildItems>
+						<LabelDecoration name="ДекорацияПользователи" id="44">
+							<AutoMaxWidth>false</AutoMaxWidth>
+							<HorizontalStretch>true</HorizontalStretch>
+							<TextColor>style:ПоясняющийТекст</TextColor>
+							<Title formatted="false">
+								<v8:item>
+									<v8:lang>ru</v8:lang>
+									<v8:content>Кому доступен ассистент. Пользователям выдаётся профиль групп доступа «ИИ-ассистент: пользователь», администраторам — «ИИ-ассистент: администратор». Уже выданные профили мастер не снимает.</v8:content>
+								</v8:item>
+							</Title>
+							<ContextMenu name="ДекорацияПользователиКонтекстноеМеню" id="45"/>
+							<ExtendedTooltip name="ДекорацияПользователиРасширеннаяПодсказка" id="46"/>
+						</LabelDecoration>
+						<LabelField name="ПолеОшибкаПрофилей" id="47">
+							<DataPath>ОшибкаПрофилей</DataPath>
+							<TitleLocation>None</TitleLocation>
+							<AutoMaxWidth>false</AutoMaxWidth>
+							<HorizontalStretch>true</HorizontalStretch>
+							<TextColor>style:ПоясняющийОшибкуТекст</TextColor>
+							<ContextMenu name="ПолеОшибкаПрофилейКонтекстноеМеню" id="48"/>
+							<ExtendedTooltip name="ПолеОшибкаПрофилейРасширеннаяПодсказка" id="49"/>
+						</LabelField>
+						<Table name="ТаблицаПользователи" id="50">
+							<Height>8</Height>
+							<DataPath>Пользователи</DataPath>
+							<ContextMenu name="ТаблицаПользователиКонтекстноеМеню" id="51"/>
+							<AutoCommandBar name="ТаблицаПользователиКоманднаяПанель" id="52"/>
+							<ExtendedTooltip name="ТаблицаПользователиРасширеннаяПодсказка" id="53"/>
+							<SearchStringAddition name="ТаблицаПользователиСтрокаПоиска" id="54">
+								<AdditionSource>
+									<Item>ТаблицаПользователи</Item>
+									<Type>SearchStringRepresentation</Type>
+								</AdditionSource>
+								<ContextMenu name="ТаблицаПользователиСтрокаПоискаКонтекстноеМеню" id="55"/>
+								<ExtendedTooltip name="ТаблицаПользователиСтрокаПоискаРасширеннаяПодсказка" id="56"/>
+							</SearchStringAddition>
+							<ViewStatusAddition name="ТаблицаПользователиСостояниеПросмотра" id="57">
+								<AdditionSource>
+									<Item>ТаблицаПользователи</Item>
+									<Type>ViewStatusRepresentation</Type>
+								</AdditionSource>
+								<ContextMenu name="ТаблицаПользователиСостояниеПросмотраКонтекстноеМеню" id="58"/>
+								<ExtendedTooltip name="ТаблицаПользователиСостояниеПросмотраРасширеннаяПодсказка" id="59"/>
+							</ViewStatusAddition>
+							<SearchControlAddition name="ТаблицаПользователиУправлениеПоиском" id="60">
+								<AdditionSource>
+									<Item>ТаблицаПользователи</Item>
+									<Type>SearchControl</Type>
+								</AdditionSource>
+								<ContextMenu name="ТаблицаПользователиУправлениеПоискомКонтекстноеМеню" id="61"/>
+								<ExtendedTooltip name="ТаблицаПользователиУправлениеПоискомРасширеннаяПодсказка" id="62"/>
+							</SearchControlAddition>
+							<ChildItems>
+								<InputField name="ПользователиПользователь" id="63">
+									<DataPath>Пользователи.Пользователь</DataPath>
+									<ContextMenu name="ПользователиПользовательКонтекстноеМеню" id="64"/>
+									<ExtendedTooltip name="ПользователиПользовательРасширеннаяПодсказка" id="65"/>
+								</InputField>
+								<CheckBoxField name="ПользователиАдминистратор" id="66">
+									<DataPath>Пользователи.Администратор</DataPath>
+									<CheckBoxType>Auto</CheckBoxType>
+									<ContextMenu name="ПользователиАдминистраторКонтекстноеМеню" id="67"/>
+									<ExtendedTooltip name="ПользователиАдминистраторРасширеннаяПодсказка" id="68"/>
+								</CheckBoxField>
+							</ChildItems>
+						</Table>
+					</ChildItems>
+				</Page>
+				<Page name="СтраницаВключение" id="69">
+					<Title>
+						<v8:item>
+							<v8:lang>ru</v8:lang>
+							<v8:content>Включение</v8:content>
+						</v8:item>
+					</Title>
+					<ExtendedTooltip name="СтраницаВключениеРасширеннаяПодсказка" id="70"/>
+					<ChildItems>
+						<CheckBoxField name="ПолеИспользовать" id="71">
+							<DataPath>Использовать</DataPath>
+							<Title>
+								<v8:item>
+									<v8:lang>ru</v8:lang>
+									<v8:content>Использовать ИИ-ассистента</v8:content>
+								</v8:item>
+							</Title>
+							<TitleLocation>Right</TitleLocation>
+							<CheckBoxType>Auto</CheckBoxType>
+							<ContextMenu name="ПолеИспользоватьКонтекстноеМеню" id="72"/>
+							<ExtendedTooltip name="ПолеИспользоватьРасширеннаяПодсказка" id="73"/>
+						</CheckBoxField>
+						<InputField name="ПолеПрофильПоУмолчанию" id="74">
+							<DataPath>ПрофильПоУмолчанию</DataPath>
+							<Title>
+								<v8:item>
+									<v8:lang>ru</v8:lang>
+									<v8:content>Профиль по умолчанию</v8:content>
+								</v8:item>
+							</Title>
+							<ToolTipRepresentation>ShowBottom</ToolTipRepresentation>
+							<Width>30</Width>
+							<HorizontalStretch>false</HorizontalStretch>
+							<ContextMenu name="ПолеПрофильПоУмолчаниюКонтекстноеМеню" id="75"/>
+							<ExtendedTooltip name="ПолеПрофильПоУмолчаниюРасширеннаяПодсказка" id="76">
+								<Title formatted="false">
+									<v8:item>
+										<v8:lang>ru</v8:lang>
+										<v8:content>Действует для пользователей без назначенного профиля. Пусто — базовый периметр ассистента.</v8:content>
+									</v8:item>
+								</Title>
+							</ExtendedTooltip>
+						</InputField>
+						<InputField name="ПолеЛимитХодов" id="77">
+							<DataPath>ЛимитХодов</DataPath>
+							<Title>
+								<v8:item>
+									<v8:lang>ru</v8:lang>
+									<v8:content>Вопросов в день на пользователя</v8:content>
+								</v8:item>
+							</Title>
+							<ToolTipRepresentation>ShowBottom</ToolTipRepresentation>
+							<Width>8</Width>
+							<HorizontalStretch>false</HorizontalStretch>
+							<ContextMenu name="ПолеЛимитХодовКонтекстноеМеню" id="78"/>
+							<ExtendedTooltip name="ПолеЛимитХодовРасширеннаяПодсказка" id="79">
+								<Title formatted="false">
+									<v8:item>
+										<v8:lang>ru</v8:lang>
+										<v8:content>0 — без ограничения.</v8:content>
+									</v8:item>
+								</Title>
+							</ExtendedTooltip>
+						</InputField>
+						<CheckBoxField name="ПолеРазрешитьИзображения" id="80">
+							<DataPath>РазрешитьИзображения</DataPath>
+							<Title>
+								<v8:item>
+									<v8:lang>ru</v8:lang>
+									<v8:content>Разрешить скриншоты в вопросах</v8:content>
+								</v8:item>
+							</Title>
+							<TitleLocation>Right</TitleLocation>
+							<ToolTipRepresentation>ShowBottom</ToolTipRepresentation>
+							<CheckBoxType>Auto</CheckBoxType>
+							<ContextMenu name="ПолеРазрешитьИзображенияКонтекстноеМеню" id="81"/>
+							<ExtendedTooltip name="ПолеРазрешитьИзображенияРасширеннаяПодсказка" id="82">
+								<Title formatted="false">
+									<v8:item>
+										<v8:lang>ru</v8:lang>
+										<v8:content>Скриншоты не проверяются на персональные данные.</v8:content>
+									</v8:item>
+								</Title>
+							</ExtendedTooltip>
+						</CheckBoxField>
+					</ChildItems>
+				</Page>
+				<Page name="СтраницаИтог" id="83">
+					<Title>
+						<v8:item>
+							<v8:lang>ru</v8:lang>
+							<v8:content>Готово</v8:content>
+						</v8:item>
+					</Title>
+					<ExtendedTooltip name="СтраницаИтогРасширеннаяПодсказка" id="84"/>
+					<ChildItems>
+						<InputField name="ПолеИтог" id="85">
+							<DataPath>Итог</DataPath>
+							<ReadOnly>true</ReadOnly>
+							<TitleLocation>None</TitleLocation>
+							<AutoMaxWidth>false</AutoMaxWidth>
+							<Height>8</Height>
+							<HorizontalStretch>true</HorizontalStretch>
+							<VerticalStretch>false</VerticalStretch>
+							<MultiLine>true</MultiLine>
+							<ContextMenu name="ПолеИтогКонтекстноеМеню" id="86"/>
+							<ExtendedTooltip name="ПолеИтогРасширеннаяПодсказка" id="87"/>
+						</InputField>
+					</ChildItems>
+				</Page>
+			</ChildItems>
+		</Pages>
+	</ChildItems>
+	<Attributes>
+		<Attribute name="ТекущийШаг" id="1">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Текущий шаг</v8:content>
+				</v8:item>
+			</Title>
+			<Type>
+				<v8:Type>xs:decimal</v8:Type>
+				<v8:NumberQualifiers>
+					<v8:Digits>1</v8:Digits>
+					<v8:FractionDigits>0</v8:FractionDigits>
+					<v8:AllowedSign>Any</v8:AllowedSign>
+				</v8:NumberQualifiers>
+			</Type>
+		</Attribute>
+		<Attribute name="СостояниеДанных" id="2">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Состояние данных</v8:content>
+				</v8:item>
+			</Title>
+			<Type>
+				<v8:Type>xs:string</v8:Type>
+				<v8:StringQualifiers>
+					<v8:Length>0</v8:Length>
+					<v8:AllowedLength>Variable</v8:AllowedLength>
+				</v8:StringQualifiers>
+			</Type>
+		</Attribute>
+		<Attribute name="ДанныеЗаполнены" id="3">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Данные заполнены</v8:content>
+				</v8:item>
+			</Title>
+			<Type>
+				<v8:Type>xs:boolean</v8:Type>
+			</Type>
+		</Attribute>
+		<Attribute name="Подключение" id="4">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Подключение</v8:content>
+				</v8:item>
+			</Title>
+			<Type>
+				<v8:Type>cfg:CatalogRef.ИИА_ПодключенияМоделей</v8:Type>
+			</Type>
+		</Attribute>
+		<Attribute name="Модель" id="5">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Модель</v8:content>
+				</v8:item>
+			</Title>
+			<Type>
+				<v8:Type>xs:string</v8:Type>
+				<v8:StringQualifiers>
+					<v8:Length>200</v8:Length>
+					<v8:AllowedLength>Variable</v8:AllowedLength>
+				</v8:StringQualifiers>
+			</Type>
+		</Attribute>
+		<Attribute name="КлючAPI" id="6">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Ключ API</v8:content>
+				</v8:item>
+			</Title>
+			<Type>
+				<v8:Type>xs:string</v8:Type>
+				<v8:StringQualifiers>
+					<v8:Length>0</v8:Length>
+					<v8:AllowedLength>Variable</v8:AllowedLength>
+				</v8:StringQualifiers>
+			</Type>
+		</Attribute>
+		<Attribute name="ОписаниеПодключения" id="7">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Описание подключения</v8:content>
+				</v8:item>
+			</Title>
+			<Type>
+				<v8:Type>xs:string</v8:Type>
+				<v8:StringQualifiers>
+					<v8:Length>0</v8:Length>
+					<v8:AllowedLength>Variable</v8:AllowedLength>
+				</v8:StringQualifiers>
+			</Type>
+		</Attribute>
+		<Attribute name="СостояниеПроверкиМодели" id="8">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Состояние проверки модели</v8:content>
+				</v8:item>
+			</Title>
+			<Type>
+				<v8:Type>xs:string</v8:Type>
+				<v8:StringQualifiers>
+					<v8:Length>0</v8:Length>
+					<v8:AllowedLength>Variable</v8:AllowedLength>
+				</v8:StringQualifiers>
+			</Type>
+		</Attribute>
+		<Attribute name="Пользователи" id="9">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Пользователи</v8:content>
+				</v8:item>
+			</Title>
+			<Type>
+				<v8:Type>v8:ValueTable</v8:Type>
+			</Type>
+			<Columns>
+				<Column name="Пользователь" id="1">
+					<Title>
+						<v8:item>
+							<v8:lang>ru</v8:lang>
+							<v8:content>Пользователь</v8:content>
+						</v8:item>
+					</Title>
+					<Type>
+						<v8:Type>cfg:CatalogRef.Пользователи</v8:Type>
+					</Type>
+				</Column>
+				<Column name="Администратор" id="2">
+					<Title>
+						<v8:item>
+							<v8:lang>ru</v8:lang>
+							<v8:content>Администратор</v8:content>
+						</v8:item>
+					</Title>
+					<Type>
+						<v8:Type>xs:boolean</v8:Type>
+					</Type>
+				</Column>
+			</Columns>
+		</Attribute>
+		<Attribute name="ОшибкаПрофилей" id="10">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Ошибка профилей</v8:content>
+				</v8:item>
+			</Title>
+			<Type>
+				<v8:Type>xs:string</v8:Type>
+				<v8:StringQualifiers>
+					<v8:Length>0</v8:Length>
+					<v8:AllowedLength>Variable</v8:AllowedLength>
+				</v8:StringQualifiers>
+			</Type>
+		</Attribute>
+		<Attribute name="Использовать" id="11">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Использовать</v8:content>
+				</v8:item>
+			</Title>
+			<Type>
+				<v8:Type>xs:boolean</v8:Type>
+			</Type>
+		</Attribute>
+		<Attribute name="ПрофильПоУмолчанию" id="12">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Профиль по умолчанию</v8:content>
+				</v8:item>
+			</Title>
+			<Type>
+				<v8:Type>cfg:CatalogRef.ИИА_ПрофилиДоступа</v8:Type>
+			</Type>
+		</Attribute>
+		<Attribute name="ЛимитХодов" id="13">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Лимит ходов</v8:content>
+				</v8:item>
+			</Title>
+			<Type>
+				<v8:Type>xs:decimal</v8:Type>
+				<v8:NumberQualifiers>
+					<v8:Digits>5</v8:Digits>
+					<v8:FractionDigits>0</v8:FractionDigits>
+					<v8:AllowedSign>Nonnegative</v8:AllowedSign>
+				</v8:NumberQualifiers>
+			</Type>
+		</Attribute>
+		<Attribute name="РазрешитьИзображения" id="14">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Разрешить изображения</v8:content>
+				</v8:item>
+			</Title>
+			<Type>
+				<v8:Type>xs:boolean</v8:Type>
+			</Type>
+		</Attribute>
+		<Attribute name="Итог" id="15">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Итог</v8:content>
+				</v8:item>
+			</Title>
+			<Type>
+				<v8:Type>xs:string</v8:Type>
+				<v8:StringQualifiers>
+					<v8:Length>0</v8:Length>
+					<v8:AllowedLength>Variable</v8:AllowedLength>
+				</v8:StringQualifiers>
+			</Type>
+		</Attribute>
+	</Attributes>
+	<Commands>
+		<Command name="Назад" id="1">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>&lt; Назад</v8:content>
+				</v8:item>
+			</Title>
+			<Action>Назад</Action>
+		</Command>
+		<Command name="Далее" id="2">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Далее &gt;</v8:content>
+				</v8:item>
+			</Title>
+			<Action>Далее</Action>
+		</Command>
+		<Command name="ЗаполнитьПовторно" id="3">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Заполнить повторно</v8:content>
+				</v8:item>
+			</Title>
+			<Action>ЗаполнитьПовторно</Action>
+		</Command>
+		<Command name="ПроверитьМодель" id="4">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Проверить связь</v8:content>
+				</v8:item>
+			</Title>
+			<ToolTip>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Сохраняет модель и ключ, затем отправляет провайдеру тестовый запрос без данных базы. Запрос может быть платным.</v8:content>
+				</v8:item>
+			</ToolTip>
+			<Action>ПроверитьМодель</Action>
+		</Command>
+		<Command name="ОткрытьПодключение" id="5">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Все свойства подключения</v8:content>
+				</v8:item>
+			</Title>
+			<Action>ОткрытьПодключение</Action>
+		</Command>
+	</Commands>
+</Form>

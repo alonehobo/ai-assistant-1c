@@ -2127,7 +2127,7 @@
 // Результаты инструментов кода и метаданных - идентификаторы, а не данные: текстовый слой их не трогает.
 Функция ЭтоИнструментКода(Имя)
 
-	Возврат СтрРазделить("rlm_execute,code_movements,form_layout,search_metadata,describe_metadata,describe_report,find_report,data_access",
+	Возврат СтрРазделить("rlm_execute,code_search,code_read,code_movements,form_layout,search_metadata,describe_metadata,describe_report,find_report,data_access",
 		",").Найти(Имя) <> Неопределено;
 
 КонецФункции

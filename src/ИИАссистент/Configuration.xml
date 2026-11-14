@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <MetaDataObject xmlns="http://v8.1c.ru/8.3/MDClasses" xmlns:app="http://v8.1c.ru/8.2/managed-application/core" xmlns:cfg="http://v8.1c.ru/8.1/data/enterprise/current-config" xmlns:cmi="http://v8.1c.ru/8.2/managed-application/cmi" xmlns:ent="http://v8.1c.ru/8.1/data/enterprise" xmlns:lf="http://v8.1c.ru/8.2/managed-application/logform" xmlns:style="http://v8.1c.ru/8.1/data/ui/style" xmlns:sys="http://v8.1c.ru/8.1/data/ui/fonts/system" xmlns:v8="http://v8.1c.ru/8.1/data/core" xmlns:v8ui="http://v8.1c.ru/8.1/data/ui" xmlns:web="http://v8.1c.ru/8.1/data/ui/colors/web" xmlns:win="http://v8.1c.ru/8.1/data/ui/colors/windows" xmlns:xen="http://v8.1c.ru/8.3/xcf/enums" xmlns:xpr="http://v8.1c.ru/8.3/xcf/predef" xmlns:xr="http://v8.1c.ru/8.3/xcf/readable" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="2.20">
 	<Configuration uuid="e0279296-1be5-4255-96de-901ed1593d33">
 		<InternalInfo>
@@ -30,6 +30,10 @@
 				<xr:ClassId>fb282519-d103-4dd3-bc12-cb271d631dfc</xr:ClassId>
 				<xr:ObjectId>7c2f601d-f9de-4439-8dc5-75d80e1fabc6</xr:ObjectId>
 			</xr:ContainedObject>
+			<xr:PropertyState>
+				<xr:Property>SessionModule</xr:Property>
+				<xr:State>Extended</xr:State>
+			</xr:PropertyState>
 		</InternalInfo>
 		<Properties>
 			<ObjectBelonging>Adopted</ObjectBelonging>
@@ -42,7 +46,7 @@
 			</Synonym>
 			<Comment/>
 			<ConfigurationExtensionPurpose>AddOn</ConfigurationExtensionPurpose>
-			<KeepMappingToExtendedConfigurationObjectsByIDs>true</KeepMappingToExtendedConfigurationObjectsByIDs>
+			<KeepMappingToExtendedConfigurationObjectsByIDs>false</KeepMappingToExtendedConfigurationObjectsByIDs>
 			<NamePrefix>ИИА_</NamePrefix>
 			<ConfigurationExtensionCompatibilityMode>Version8_3_27</ConfigurationExtensionCompatibilityMode>
 			<DefaultRunMode>ManagedApplication</DefaultRunMode>
@@ -52,7 +56,7 @@
 			<ScriptVariant>Russian</ScriptVariant>
 			<DefaultRoles/>
 			<Vendor/>
-			<Version>0.2.0.7</Version>
+			<Version>0.2.0.12</Version>
 			<DefaultLanguage>Language.Русский</DefaultLanguage>
 			<BriefInformation/>
 			<DetailedInformation/>
@@ -84,6 +88,10 @@
 			<CommonTemplate>ИИА_ЭталонныеВопросы</CommonTemplate>
 			<CommonTemplate>ИИА_ПоставляемыеПрофили</CommonTemplate>
 			<CommonTemplate>ИИА_ПоставляемыйГлоссарий</CommonTemplate>
+			<CommonTemplate>ИИА_КарточкиОтчетовБП</CommonTemplate>
+			<CommonTemplate>ИИА_ПоставляемыеПрофилиБП</CommonTemplate>
+			<CommonTemplate>ИИА_ПоставляемыйГлоссарийБП</CommonTemplate>
+			<CommonTemplate>ИИА_ПоискКода</CommonTemplate>
 			<CommonModule>ИИА_Периметр</CommonModule>
 			<CommonModule>ИИА_КартаДоступа</CommonModule>
 			<CommonModule>ИИА_ГраницаЗапроса</CommonModule>
@@ -121,6 +129,8 @@
 			<CommonModule>ИИА_МаскированиеПовтИсп</CommonModule>
 			<CommonModule>ИИА_ФоновыйХод</CommonModule>
 			<CommonModule>ИИА_Файлы</CommonModule>
+			<CommonModule>ИИА_МастерНастройки</CommonModule>
+			<CommonModule>ИИА_ПоискКода</CommonModule>
 			<HTTPService>ИИА_API</HTTPService>
 			<ScheduledJob>ИИА_Очистка</ScheduledJob>
 			<CommonCommand>ИИА_ОткрытьЧат</CommonCommand>
@@ -146,9 +156,13 @@
 			<Constant>ИИА_РежимПрокси</Constant>
 			<Constant>ИИА_АдресПрокси</Constant>
 			<Constant>ИИА_ЗапретитьФайлы</Constant>
-			<CommonForm>ИИА_Чат</CommonForm>
+			<Constant>ИИА_МаксимумШаговХода</Constant>
+			<Constant>ИИА_МаксимумМинутХода</Constant>
+			<Constant>ИИА_ПутьКИсходникам</Constant>
+			<Constant>ИИА_ИсходникиНаКлиенте</Constant>
 			<CommonForm>ИИА_Настройки</CommonForm>
 			<CommonForm>ИИА_ДоступКДанным</CommonForm>
+			<CommonForm>ИИА_МастерНастройки</CommonForm>
 			<Catalog>ИИА_ПрофилиДоступа</Catalog>
 			<Catalog>ИИА_ПодключенияМоделей</Catalog>
 			<Catalog>ИИА_Глоссарий</Catalog>
@@ -161,6 +175,7 @@
 			<Enum>ИИА_ПровайдерыМоделей</Enum>
 			<Enum>ИИА_РежимыРассуждений</Enum>
 			<Enum>ИИА_РежимыПрокси</Enum>
+			<DataProcessor>ИИА_Чат</DataProcessor>
 			<InformationRegister>ИИА_ЖурналВызовов</InformationRegister>
 			<InformationRegister>ИИА_КлассификацияДанных</InformationRegister>
 			<InformationRegister>ИИА_КаталогМетаданных</InformationRegister>
